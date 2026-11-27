@@ -215,14 +215,18 @@ unset_after_uninstall() {
 favorites_ok() {
     local value
     value=$(gget org.gnome.shell favorite-apps)
-    case "$value" in
-        *firefox.desktop*) ;;
-        *) return 1 ;;
-    esac
+    # Welcher Browser gewinnt, haengt davon ab, welche .desktop-Dateien im
+    # System liegen (auf CI-Runnern z. B. Epiphany). Geprueft wird deshalb:
+    # irgendein Browser aus der Vorzugsliste plus die Dateien-App.
     case "$value" in
         *org.gnome.Nautilus.desktop*) ;;
         *) return 1 ;;
     esac
+    case "$value" in
+        *google-chrome.desktop*|*brave-browser.desktop*|*chromium*.desktop*|\
+        *firefox.desktop*|*Epiphany.desktop*) return 0 ;;
+    esac
+    return 1
 }
 
 activate_unchanged() {
