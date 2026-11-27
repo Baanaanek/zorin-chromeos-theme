@@ -189,11 +189,20 @@ export class Entry extends Actor {
     }
 }
 
+// Adjustment wie bei Clutter: Wert, Inhalt und Seitengroesse, dazu Signale.
+function makeAdjustment(upper = 0, pageSize = 0) {
+    const adjustment = new SignalSource();
+    adjustment.value = 0;
+    adjustment.upper = upper;
+    adjustment.page_size = pageSize;
+    return adjustment;
+}
+
 export class ScrollView extends Actor {
     constructor(params = {}) {
         super(params);
-        this.vscroll = {adjustment: {value: 0}};
-        this.hscroll = {adjustment: {value: 0}};
+        this.vscroll = {adjustment: makeAdjustment()};
+        this.hscroll = {adjustment: makeAdjustment()};
     }
 
     set_child(child) {
@@ -208,6 +217,8 @@ export class Bin extends Actor {
         this.add_child(child);
     }
 }
+
+export {makeAdjustment};
 
 export const Theme = class Theme {
     load_stylesheet(file) {

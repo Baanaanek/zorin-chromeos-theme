@@ -9,7 +9,8 @@
 | GTK-Theme | `theme/ChromeOS/gtk-3.0/` | Fenster, Titelleisten, Buttons, Eingabefelder, Menues fuer GTK-3-Apps |
 | GTK-4/libadwaita | `theme/ChromeOS/gtk-4.0/gtk.css` | Farbtokens und Radien fuer GNOME-46-Apps (Dateien, Einstellungen, Texteditor, Konsole); wird als `~/.config/gtk-4.0/gtk.css` installiert |
 | Mauszeiger | `cursor/ChromeOS/` | eigener Xcursor-Satz (52 Namen, 24/48 px), erzeugt aus `tools/build-cursors.mjs` |
-| Hintergruende | `assets/wallpapers/` | Drei eigene Motive (Blau-Verlauf, Iris, Bergsee) |
+| Hintergruende | `assets/wallpapers/` | Drei eigene Motive (Blau-Verlauf, Iris, See), erzeugt von `tools/build-wallpapers.mjs` |
+| Schriften | `fonts/` | Roboto + Roboto Mono (SIL OFL 1.1), Installation nach `~/.local/share/fonts/ChromeOS` |
 
 Das Shell-Theme wird **von der Extension selbst** geladen
 (`theme.js` → `St.Theme.load_stylesheet()`). Dadurch braucht das Theme keine
@@ -29,7 +30,7 @@ Shelf            rgba(255,255,255,0.88)
 Radius gross     24px (Launcher, Popups)
 Radius mittel    16px (Shelf, Kacheln)
 Radius klein     8px  (Buttons, Eingaben)
-Schrift          "Google Sans", "Roboto", "Cantarell", sans-serif
+Schrift          "Roboto" (liegt im Repo bei), Monospace "Roboto Mono"
 ```
 
 ## Geometrie
@@ -48,6 +49,10 @@ Schrift          "Google Sans", "Roboto", "Cantarell", sans-serif
   Launcher (GNOME-Overview wird dafuer abgefangen).
 - Tippen filtert Apps; `Enter` oeffnet den ersten Treffer, sonst die
   Websuche. `Esc` schliesst.
+- Rechts im Suchfeld erscheint mit dem ersten Zeichen ein Loesch-Knopf, der
+  das Feld leert und wieder das volle App-Raster zeigt.
+- Unter dem App-Raster zeigen Seitenpunkte die aktuelle Bildschirmseite an;
+  bei einer einzigen Seite und waehrend der Suche bleiben sie verborgen.
 - Die Websuche-Zeile zeigt die erkannte Suchmaschine an und oeffnet sie im
   Standardbrowser.
 - Klick auf ein angeheftetes App-Icon startet die App bzw. holt ein
@@ -67,5 +72,5 @@ Schrift          "Google Sans", "Roboto", "Cantarell", sans-serif
   Zorin sie fuer Fensterverwaltung und Arbeitsbereiche braucht.
 - libadwaita-Apps uebernehmen ueber die Nutzer-CSS Farben, Akzent, Radien
   und Schrift, aber nicht ihr Layout (Sidebars, Karten, Headerbar-Aufbau).
-- Icon-Set, Google Sans und der Material-Mauszeiger sind nicht frei
-  lizenzierbar; GDM, Plymouth und Systemklaenge braeuchten sudo.
+- Icon-Set und Google Sans sind nicht frei lizenzierbar (Roboto liegt bei,
+  Zorins Icons bleiben); GDM, Plymouth und Systemklaenge braeuchten sudo.

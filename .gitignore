@@ -6,3 +6,11 @@ Thumbs.db
 # lokale Testausgaben
 /tmp/
 /build/
+
+# Werkzeug- und Sitzungsordner der Entwicklungsumgebung
+.cloud-attachments/
+.freebuff/
+
+# Erzeugte Vorschau des Mauszeiger-Satzes: entsteht bei Bedarf mit
+# "bun tools/build-cursors.mjs", gehoert aber nicht ins Repo.
+docs/reference/*.png

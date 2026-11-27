@@ -12,3 +12,6 @@ bin/chromeos-search-url text eol=lf
 *.webp binary
 *.png binary
 *.ico binary
+
+# Schriften sind Binaerformat (variable TTFs).
+fonts/*.ttf binary

@@ -15,25 +15,22 @@ Standardbrowsers**, nicht Google.
 
 ---
 
-## Vorschau / Referenzen
+## Aussehen
 
-Die Optik orientiert sich an diesen ChromeOS-Screenshots (im Repo unter
-`docs/reference/`):
+Im Repo liegen **keine fremden Bilder**: keine ChromeOS-Screenshots, keine
+Google-Wallpaper. Alles Bildliche ist selbst erzeugt und steht unter
+derselben MIT-Lizenz wie das Theme.
 
-| Launcher + Shelf | Tray dunkel | Tray hell |
-| --- | --- | --- |
-| ![Launcher](docs/reference/01-launcher-apps.webp) | ![Dunkel](docs/reference/03-quick-settings-dark.webp) | ![Hell](docs/reference/04-quick-settings-light.webp) |
-
-| Shelf klein | Shelf + Tray breit |
+| Element | Umsetzung |
 | --- | --- |
-| ![Shelf klein](docs/reference/02-browser-shelf-small.webp) | ![Shelf](docs/reference/05-shelf-tray.webp) |
+| Launcher | Panel oben links, 560 px breit, Suchzeile mit Lupe und Lösch-Knopf, App-Raster mit 5 Spalten, Seitenpunkte unter dem Raster |
+| Shelf | 56 px hohe, schwebende Leiste unten: runder Launcher-Knopf links, angeheftete und laufende Apps, Uhr und Status rechts |
+| Tray | echte GNOME-Knöpfe, in die Shelf umgehängt – Kalender und Schnelleinstellungen erscheinen direkt über der Leiste |
+| Mauszeiger | eigener Xcursor-Satz, 52 Namen, 24/48 px (`cursor/ChromeOS/`) |
+| Hintergründe | drei eigene Motive, per Skript erzeugt (`tools/build-wallpapers.mjs`) |
+| Schriften | Roboto und Roboto Mono (SIL OFL 1.1) liegen bei und werden mitinstalliert |
 
-Der mitgelieferte Mauszeiger (eigene Zeichnungen, MIT) im Vergleich hell/dunkel:
-
-![Mauszeiger](docs/reference/06-cursors.png)
-
-Eigene Hintergründe liegen in `assets/wallpapers/`
-(`chromeos-blue.jpg`, `chromeos-iris.jpg`, `chromeos-lake.jpg`).
+Farben, Radien und Geometrie stehen in [`docs/design.md`](docs/design.md).
 Ein Screenshot des fertigen Zorin-Desktops kann hier nicht liegen – die
 Entwicklungsumgebung ist Windows; nach dem ersten Login gern ergänzen.
 
@@ -44,8 +41,8 @@ Entwicklungsumgebung ist Windows; nach dem ersten Login gern ergänzen.
 - **Zorin OS 18** (GNOME Shell 46) – dafür ist das Theme gebaut.
 - Zorin OS 17 / GNOME 43: GTK-Theme und Hintergrund funktionieren, die
   Shell-Extension braucht GNOME **45+**. Das Installationsskript weist darauf hin.
-- Weder `sudo` noch zusätzliche Pakete sind nötig. Optional:
-  `sudo apt install fonts-roboto` für die ChromeOS-Schrift.
+- Weder `sudo` noch zusätzliche Pakete sind nötig – Roboto und Roboto Mono
+  liegen im Repo und werden mitinstalliert.
 
 ---
 
@@ -75,8 +72,21 @@ Weitere Schalter:
 
 ```bash
 bash ~/zorin-chromeos-theme/install.sh --dry-run   # nur zeigen, was passiert
+bash ~/zorin-chromeos-theme/install.sh --check     # Ist-Zustand prüfen (Exit 1 bei Abweichung)
+bash ~/zorin-chromeos-theme/install.sh --version
 bash ~/zorin-chromeos-theme/install.sh --help
 ```
+
+Teile weglassen – sie bleiben dann unangetastet, auch beim Deinstallieren:
+
+```bash
+bash ~/zorin-chromeos-theme/install.sh --no-cursor --no-gtk4 --no-ding --no-fonts --no-wallpaper
+```
+
+Das Skript verweigert den Start unter `sudo`: das Theme gehört ins
+Benutzer-Home. Bricht die Installation ab (Strg+C, Platte voll), holt der
+Abbruch-Handler die bereits gesetzten Einstellungen zurück; die Dateien
+räumt `uninstall.sh`.
 
 Das Skript kopiert alles ins Benutzer-Home, sichert vorher die betroffenen
 Einstellungen und deaktiviert Zorins eigene Leisten-Erweiterungen
@@ -90,7 +100,8 @@ u. ä.), damit nichts doppelt erscheint.
 | `~/.local/share/themes/ChromeOS/` | GTK-3-Theme + GNOME-Shell-Theme |
 | `~/.local/share/gnome-shell/extensions/chromeos-shell@baanaanek.github.io/` | Launcher, Shelf, Websuche |
 | `~/.local/bin/chromeos-search-url` | ermittelt die Suchmaschine des Standardbrowsers |
-| `~/.local/share/backgrounds/chromeos-wallpaper.jpg` | Standard-Hintergrund |
+| `~/.local/share/backgrounds/chromeos-wallpaper.png` | Standard-Hintergrund (eigenes PNG) |
+| `~/.local/share/fonts/ChromeOS/` | Roboto + Roboto Mono (SIL OFL 1.1) |
 | `~/.local/share/icons/ChromeOS/` | eigener Mauszeiger-Satz (52 Namen, 24/48 px) |
 | `~/.config/gtk-4.0/gtk.css` | ChromeOS-Farben für GTK 4/libadwaita (eine vorhandene Datei wird vorher gesichert) |
 | `~/.local/state/chromeos-theme/` | Sicherung der alten Einstellungen und der GTK-4-Datei |
@@ -111,9 +122,17 @@ Ordner gelöscht werden. Falls das Repo schon weg ist, reicht es,
 weiteren Dateien.
 
 `bash ~/zorin-chromeos-theme/uninstall.sh --dry-run` zeigt vorher, was
-entfernt würde. Entfernt werden: Extension, Theme-Ordner (nur mit
-Theme-Markierung), Mauszeiger-Satz, GTK-4-Farbdatei, Suchhelfer,
-Hintergrundbild, Konfiguration und der Zustandsordner. Zuvor deaktivierte
+entfernt würde. Entfernt werden nur die Teile, die tatsächlich
+installiert wurden (festgehalten in `~/.local/state/chromeos-theme/components.txt`):
+Extension, Theme-Ordner (nur mit Theme-Markierung), Mauszeiger-Satz,
+Schriften, GTK-4-Farbdatei, Suchhelfer, Hintergrundbild, Konfiguration und
+der Zustandsordner.
+
+Nur die Einstellungen zurückholen, ohne Dateien anzufassen:
+
+```bash
+bash ~/zorin-chromeos-theme/uninstall.sh --settings-only
+``` Zuvor deaktivierte
 Zorin-Leisten werden wieder aktiviert, alle gesetzten `gsettings`-Werte
 kommen exakt zurück – Schlüssel, die vorher nie gesetzt waren, werden per
 `gsettings reset` wieder auf ihren Standard gebracht, und eine vorher
@@ -235,8 +254,11 @@ Grenze des Toolkits, keine offene Baustelle.
 - **Farben:** `theme/ChromeOS/gtk-3.0/gtk.css` und
   `theme/ChromeOS/gnome-shell/gnome-shell.css` (Akzent ist `#1a73e8`).
   Nach Änderungen neu installieren (`install.sh`) und neu anmelden.
-- **Hintergrund:** Einstellungen → Darstellung, oder
-  `assets/wallpapers/` tauschen und `install.sh` erneut ausführen.
+- **Hintergrund:** Einstellungen → Darstellung, oder in
+  `tools/build-wallpapers.mjs` die Motive ändern, mit
+  `bun tools/build-wallpapers.mjs` neu erzeugen und `install.sh` erneut
+  ausführen. Ein eigenes Bild geht auch direkt über
+  `gsettings set org.gnome.desktop.background picture-uri …`.
 - **Shelf-Apps:** über das Rechtsklick-Menü der Shelf oder des Launchers
   anheften/entfernen; die Shelf zeigt Favoriten plus laufende Apps.
 - **Mauszeiger:** Formen und Farben in `tools/build-cursors.mjs` ändern und
@@ -262,8 +284,14 @@ extension/chromeos-shell@…/    Launcher, Shelf, Websuche
 theme/ChromeOS/gtk-4.0/        GTK-4/libadwaita-Farben (Nutzer-CSS)
 cursor/ChromeOS/               eigener Mauszeiger-Satz (Xcursor, MIT)
 tools/build-cursors.mjs        erzeugt und prüft den Mauszeiger-Satz
-assets/wallpapers/             drei eigene Hintergrundmotive
-docs/reference/                ChromeOS-Referenzscreenshots + Cursor-Vorschau
+assets/wallpapers/             drei eigene, erzeugte Hintergrundmotive (PNG)
+fonts/                         Roboto + Roboto Mono (SIL OFL 1.1) + Lizenztext
+data/settings-keys.json        gsettings-Schluessel je GNOME-Version
+docs/reference/                Design-Referenz (reiner Text, keine Bilder)
+tools/build-wallpapers.mjs     erzeugt und prueft die Hintergruende
+tools/check-contrast.mjs       WCAG-Kontrast der GTK-4-Farbtokens
+tools/check-settings.mjs       Schluessel gegen data/settings-keys.json
+.github/workflows/tests.yml    CI: beide Harnesses + Asset-Pruefungen
 docs/design.md                 Design-Tokens, Geometrie, Entscheidungen
 tests/run-all.sh               beide Test-Harnesses
 tests/scripts/                 Install/Uninstall-Harness + Stubs
@@ -286,8 +314,16 @@ cd ~/zorin-chromeos-theme && bash tests/run-all.sh
 
 | Harness | Prüfungen | Inhalt |
 | --- | --- | --- |
-| `tests/scripts/run.sh` | 75 | Probelauf, Installation, zweiter Lauf, `--activate`, Deinstallation, Wiederherstellung aller 21 Einstellungen inkl. „vorher nie gesetzt“, Cursor, GTK-4-Datei, Lauf ohne GNOME-Werkzeuge |
-| `tests/extension/lifecycle.mjs` | 44 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Tray, Suche, Kontextmenüs, Theme, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
+| `tests/scripts/run.sh` | 101 | Probelauf, `--version`, `--check` vor und nach der Installation, echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 22 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, Lauf ohne GNOME-Werkzeuge |
+| `tests/extension/lifecycle.mjs` | 50 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Tray, Suche, Lösch-Knopf, Seitenpunkte, Kontextmenüs, Theme, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
+
+Dazu drei Prüfungen ohne GNOME-Bezug:
+
+| Werkzeug | Inhalt |
+| --- | --- |
+| `tools/build-wallpapers.mjs --check` | Hintergründe sind gültige PNGs und exakt der Stand des Generators, keine fremden Bilder im Ordner |
+| `tools/check-contrast.mjs` | 17 Text-/Akzentpaare der GTK-4-Tokens erfüllen WCAG AA in hell und dunkel; beide Modi definieren dieselben Tokens |
+| `tools/check-settings.mjs` | jeder `set_key`-Aufruf steht in `data/settings-keys.json` und die Matrix enthält keinen ungenutzten Schlüssel |
 
 Details und Voraussetzungen: [tests/README.md](tests/README.md).
 
@@ -299,8 +335,8 @@ das Theme nicht anfordert, oder Material, das nicht frei lizenzierbar ist.
 - **Icon-Set:** ChromeOS zeichnet mit Googles Material-Icons. Ein
   vollständiges, frei lizenzierbares 1:1-Set gibt es nicht; Zorins Icons
   bleiben. Das ist die sichtbarste verbleibende Abweichung.
-- **Google Sans:** proprietär. Das Theme setzt Roboto (frei, optional
-  `fonts-roboto`) und fällt sonst auf die Systemschrift zurück.
+- **Google Sans:** proprietär. Beigelegt ist Roboto (SIL OFL 1.1), das
+  ChromeOS ebenfalls verwendet; Google Sans selbst nicht.
 - **Material-Mauszeiger:** Googles Original ist nicht frei lizenzierbar.
   Beigelegt ist ein eigener, aus Vektorformen erzeugter Satz (MIT), der die
   Formensprache aufnimmt, aber keine Kopie ist.
@@ -321,8 +357,7 @@ das Theme nicht anfordert, oder Material, das nicht frei lizenzierbar ist.
 
 ## Geprüft / nicht geprüft
 
-Geprüft wurde gegen einen **frischen Klon des Remotes** (nicht gegen den
-Entwicklungs-Arbeitsbaum), Stand `main`:
+Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
 
 - **Zeilenenden/Modus im Klon**: `git ls-files --eol` meldet für
   `install.sh`, `uninstall.sh` und `bin/chromeos-search-url`
@@ -334,17 +369,22 @@ Entwicklungs-Arbeitsbaum), Stand `main`:
 - **Mauszeiger-Satz** über `bun tools/build-cursors.mjs --check`: alle 52
   Namen vorhanden, jede Xcursor-Datei mit gültigem Header, zwei Bildern
   (24/48 px), passenden Hotspots und nicht-leeren Pixeldaten.
-- **Skripte end-to-end** über `tests/scripts/run.sh` – 75 Prüfungen, alle
-  grün: Dry-Run ohne Änderung; echter Lauf installiert Theme, Extension,
-  Mauszeiger, GTK-4-Farbdatei, Helfer und Wallpaper; zweiter Lauf idempotent;
-  `uninstall.sh` entfernt alles, stellt alle 21 gesicherten
+- **Skripte end-to-end** über `tests/scripts/run.sh` – 101 Prüfungen, alle
+  grün: Dry-Run ohne Änderung; `--check` meldet vor der Installation
+  Abweichungen (Exit 1) und danach „Alles wie erwartet“ (Exit 0); echter Lauf
+  installiert Theme, Extension, Mauszeiger, Schriften, GTK-4-Farbdatei,
+  Helfer und Hintergrund; zweiter Lauf idempotent; Teilinstallation mit
+  `--no-cursor --no-gtk4` lässt genau diese Teile unangetastet und hält sie
+  in `components.txt` fest; `--settings-only` holt nur die Einstellungen
+  zurück; `uninstall.sh` entfernt alles, stellt alle 22 gesicherten
   `gsettings`-Werte exakt wieder her, resettet vorher nie gesetzte Schlüssel
   (`cursor-theme`, `cursor-size`, `titlebar-font`) und reaktiviert die zuvor
   deaktivierten Zorin-Leisten. Zusätzlich: Lauf ohne GNOME-Werkzeuge bricht
   nicht ab und räumt vollständig auf, inklusive der Nutzer-GTK-4-Datei.
 - **Extension-Lebenszyklus** über `tests/extension/lifecycle.mjs` mit den
-  geklonten Quellen gegen ein gemocktes GNOME (St, Clutter, Main, Shell,
-  PopupMenu) – 44 Prüfungen, alle grün, inklusive zweitem
+  echten Quellen gegen ein gemocktes GNOME (St, Clutter, Main, Shell,
+  PopupMenu) – 50 Prüfungen, alle grün, inklusive Lösch-Knopf im Suchfeld,
+  Seitenpunkten unter dem App-Raster und zweitem
   enable/disable-Zyklus: `enable()` baut Launcher und Shelf, hängt Datum und
   Schnelleinstellungen um, blendet die Top-Leiste aus; Rechtsklick öffnet
   Anheften/Entfernen, Fenster schließen und App-Info; `disable()` entfernt
@@ -354,6 +394,15 @@ Entwicklungs-Arbeitsbaum), Stand `main`:
   48.0 sowie Mutter 46: alle genutzten APIs existieren; entfernte APIs
   (`Shell.App.should_show()`, `get_keywords()`) und Legacy-Importe
   (`imports.*`, `ExtensionUtils`) kommen nicht vor.
+- **Ohne GNOME prüfbar:** `bun tools/build-wallpapers.mjs --check` (drei
+  gültige PNGs, exakt der Generatorstand, keine fremden Bilder im Ordner),
+  `bun tools/check-contrast.mjs` (17 Farbpaare erfüllen WCAG AA in hell und
+  dunkel, beide Modi definieren dieselben Tokens) und
+  `bun tools/check-settings.mjs` (jeder gesetzte Schlüssel steht mit
+  Mindestversion in `data/settings-keys.json`). Der Kontrastlauf hat dabei
+  zwei echte Fehler gefunden: im Dunkelmodus fehlten die Tokens für
+  Destructive/Success/Warning/Error, und Weiß auf `#1e8e3e` lag mit 4,21:1
+  unter AA – beides ist korrigiert.
 
 Nicht beweisbar ohne laufende GNOME-Sitzung: das tatsächliche Rendering von
 Shell-Theme und CSS, die Position von Popups und Kontextmenüs über der
@@ -369,5 +418,6 @@ Linux-Kernel. Bitte Abweichungen als Issue melden.
 
 ## Lizenz
 
-MIT – siehe [LICENSE](LICENSE). Die Referenzscreenshots in
-`docs/reference/` dienen nur der Dokumentation des Looks.
+MIT – siehe [LICENSE](LICENSE). Die mitgelieferten Schriften Roboto und
+Roboto Mono stehen unter der SIL Open Font License 1.1; der Lizenztext liegt
+in `fonts/OFL.txt`. Im Repo liegen keine fremden Bilder.

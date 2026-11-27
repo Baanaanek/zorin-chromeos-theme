@@ -62,8 +62,21 @@ export class Launcher {
         this.entry.clutter_text.connect('text-changed', () => this._refresh());
         this.entry.clutter_text.connect('activate', () => this._activateFirst());
 
+        // ChromeOS zeigt rechts im Suchfeld einen Loesch-Knopf, sobald Text drinsteht.
+        this._clearButton = new St.Button({
+            style_class: 'chromeos-search-clear',
+            can_focus: true,
+            visible: false,
+            child: new St.Icon({icon_name: 'edit-clear-symbolic', icon_size: 16}),
+        });
+        this._clearButton.connect('clicked', () => {
+            this.entry.set_text('');
+            this.entry.grab_key_focus();
+        });
+
         searchRow.add_child(this._searchIcon);
         searchRow.add_child(this.entry);
+        searchRow.add_child(this._clearButton);
         this.actor.add_child(searchRow);
 
         this.scroll = new St.ScrollView({
@@ -80,6 +93,24 @@ export class Launcher {
         });
         this.scroll.set_child(this.content);
         this.actor.add_child(this.scroll);
+
+        // Seitenpunkte unter dem App-Raster wie in ChromeOS.
+        this._dots = new St.BoxLayout({
+            style_class: 'chromeos-page-dots',
+            x_align: Clutter.ActorAlign.CENTER,
+            reactive: false,
+            visible: false,
+        });
+        this._dots.hide();
+        this.actor.add_child(this._dots);
+        this._pageDots = [];
+        this._pageCount = 0;
+        try {
+            this._scrollNotifyId = this.scroll.vscroll.adjustment.connect('changed',
+                () => this._syncDots());
+        } catch (e) {
+            this._scrollNotifyId = 0;
+        }
 
         getEngineName(name => {
             if (this._destroyed || !name || name === this._engineName)
@@ -106,6 +137,14 @@ export class Launcher {
         if (this._monitorsId) {
             Main.layoutManager.disconnect(this._monitorsId);
             this._monitorsId = 0;
+        }
+        if (this._scrollNotifyId) {
+            try {
+                this.scroll.vscroll.adjustment.disconnect(this._scrollNotifyId);
+            } catch (e) {
+                // Adjustment ist mit dem Actor verschwunden.
+            }
+            this._scrollNotifyId = 0;
         }
         try {
             if (this._chromeAdded)
@@ -169,6 +208,54 @@ export class Launcher {
         else
             this._buildSearch(query);
         this.scroll.vscroll.adjustment.value = 0;
+        if (this._clearButton)
+            this._clearButton.visible = query.length > 0;
+        this._syncDots();
+    }
+
+    // Seitenpunkte: eine Marke je Bildschirmseite des App-Rasters, die
+    // aktuelle Seite hervorgehoben. Beim Suchen und bei einer einzigen Seite
+    // bleiben sie ausgeblendet.
+    _syncDots() {
+        if (!this._dots || this._destroyed)
+            return;
+        const adjustment = this.scroll.vscroll.adjustment;
+        const pageSize = Number(adjustment.page_size) || 0;
+        const content = Number(adjustment.upper) || 0;
+        const browsing = this._visible && this.entry.get_text().trim().length === 0;
+
+        if (!browsing || pageSize <= 0 || content <= pageSize * 1.5) {
+            if (this._dots.visible) {
+                this._dots.destroy_all_children();
+                this._pageDots = [];
+                this._pageCount = 0;
+                this._dots.hide();
+            }
+            return;
+        }
+
+        const pages = Math.max(2, Math.ceil(content / pageSize));
+        const current = Math.min(pages - 1,
+            Math.max(0, Math.round((Number(adjustment.value) || 0) / pageSize)));
+
+        if (pages !== this._pageCount) {
+            this._dots.destroy_all_children();
+            this._pageDots = [];
+            for (let index = 0; index < pages; index++) {
+                const dot = new St.Widget({style_class: 'chromeos-page-dot'});
+                this._dots.add_child(dot);
+                this._pageDots.push(dot);
+            }
+            this._pageCount = pages;
+        }
+
+        this._pageDots.forEach((dot, index) => {
+            if (index === current)
+                dot.add_style_class_name('chromeos-page-dot-active');
+            else
+                dot.remove_style_class_name('chromeos-page-dot-active');
+        });
+        this._dots.show();
     }
 
     // get_installed() liefert bereits nur anzeigbare Apps; Shell.App hat

@@ -27,17 +27,29 @@ WALL_DIR="$DATA_HOME/backgrounds"
 STATE_DIR="$STATE_HOME/chromeos-theme"
 BACKUP_FILE="$STATE_DIR/settings.tsv"
 DISABLED_FILE="$STATE_DIR/disabled-extensions.txt"
-WALLPAPER="$WALL_DIR/chromeos-wallpaper.jpg"
+WALLPAPER="$WALL_DIR/chromeos-wallpaper.png"
+WALLPAPER_NAME="chromeos-blue"
+WALLPAPER_SRC="$SCRIPT_DIR/assets/wallpapers/$WALLPAPER_NAME.png"
 CURSOR_NAME="$THEME_NAME"
 CURSOR_SRC="$SCRIPT_DIR/cursor/$CURSOR_NAME"
 ICON_DIR="$DATA_HOME/icons/$CURSOR_NAME"
 GTK4_DIR="$CONFIG_HOME/gtk-4.0"
 GTK4_FILE="$GTK4_DIR/gtk.css"
 GTK4_BACKUP="$STATE_DIR/gtk-4.0-gtk.css.before"
+FONT_DIR="$DATA_HOME/fonts/ChromeOS"
+FONT_SRC="$SCRIPT_DIR/fonts"
+COMPONENTS_FILE="$STATE_DIR/components.txt"
+VERSION="1.1.0"
 
 DRY_RUN=0
 ACTIVATE_ONLY=0
+CHECK_ONLY=0
 SKIPPED=""
+OPT_CURSOR=1
+OPT_GTK4=1
+OPT_DING=1
+OPT_FONTS=1
+OPT_WALLPAPER=1
 
 usage() {
     cat <<'EOF'
@@ -46,8 +58,13 @@ ChromeOS-Theme fuer Zorin OS
   ./install.sh              Theme, Extension, Hintergrund installieren
   ./install.sh --activate   nur Einstellungen setzen und Extension aktivieren
                             (nach dem ersten Ab-/Anmelden nuetzlich)
+  ./install.sh --check      Ist-Zustand gegen Soll pruefen (Exit 1 bei Abweichung)
   ./install.sh --dry-run    nur anzeigen, was geaendert wuerde
+  ./install.sh --version    Version dieses Skripts
   ./install.sh --help       diese Hilfe
+
+Teile weglassen (bleiben dann unangetastet, auch beim Deinstallieren):
+  --no-cursor --no-gtk4 --no-ding --no-fonts --no-wallpaper
 
 Deinstallation: ./uninstall.sh
 EOF
@@ -57,10 +74,24 @@ for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY_RUN=1 ;;
         --activate) ACTIVATE_ONLY=1 ;;
+        --check) CHECK_ONLY=1 ;;
+        --no-cursor) OPT_CURSOR=0 ;;
+        --no-gtk4) OPT_GTK4=0 ;;
+        --no-ding) OPT_DING=0 ;;
+        --no-fonts) OPT_FONTS=0 ;;
+        --no-wallpaper) OPT_WALLPAPER=0 ;;
+        --version) printf 'chromeos-theme %s\n' "$VERSION"; exit 0 ;;
         -h|--help) usage; exit 0 ;;
         *) printf 'Unbekannte Option: %s\n\n' "$arg"; usage; exit 2 ;;
     esac
 done
+
+# Das Theme gehoert in das Home des angemeldeten Benutzers. Mit sudo landet es
+# in /root und aendert fuer den echten Benutzer nichts.
+if [ "$(id -u)" -eq 0 ] && [ -z "${CHROMEOS_THEME_ALLOW_ROOT:-}" ]; then
+    printf 'Bitte ohne sudo starten: das Theme gehoert in dein Benutzer-Home.\n' >&2
+    exit 1
+fi
 
 # --- Ausgabe ---------------------------------------------------------------
 if [ -t 1 ]; then
@@ -126,7 +157,7 @@ elif [ "$SHELL_MAJOR" -lt 45 ]; then
     skip "GTK-Theme, Hintergrund und Suchhelfer werden trotzdem installiert."
 fi
 
-if [ "$DRY_RUN" -eq 0 ]; then
+if [ "$DRY_RUN" -eq 0 ] && [ "$CHECK_ONLY" -eq 0 ]; then
     mkdir -p "$STATE_DIR" "$CONFIG_HOME"
     [ -f "$BACKUP_FILE" ] || : > "$BACKUP_FILE"
 fi
@@ -242,33 +273,58 @@ install_files() {
         *":$BIN_DIR:"*) ;;
         *) warn "$BIN_DIR ist nicht im PATH - der Launcher nutzt den absoluten Pfad trotzdem." ;;
     esac
-
     info "Hintergrundbild nach $WALLPAPER"
-    run mkdir -p "$WALL_DIR"
-    run cp -a "$SCRIPT_DIR/assets/wallpapers/chromeos-blue.jpg" "$WALLPAPER"
+    if [ "$OPT_WALLPAPER" -eq 1 ]; then
+        run mkdir -p "$WALL_DIR"
+        run cp -a "$WALLPAPER_SRC" "$WALLPAPER"
+    else
+        skip "Hintergrund uebersprungen (--no-wallpaper)."
+    fi
 
     info "Mauszeiger nach $ICON_DIR"
-    if [ -d "$ICON_DIR" ]; then
-        if [ -f "$ICON_DIR/.chromeos-theme" ]; then
-            run rm -rf "$ICON_DIR"
-        else
-            warn "Vorhandener Mauszeiger-Satz ohne Markierung - wird gesichert: $ICON_DIR.bak"
-            run mv "$ICON_DIR" "$ICON_DIR.bak"
+    if [ "$OPT_CURSOR" -eq 1 ]; then
+        if [ -d "$ICON_DIR" ]; then
+            if [ -f "$ICON_DIR/.chromeos-theme" ]; then
+                run rm -rf "$ICON_DIR"
+            else
+                warn "Vorhandener Mauszeiger-Satz ohne Markierung - wird gesichert: $ICON_DIR.bak"
+                run mv "$ICON_DIR" "$ICON_DIR.bak"
+            fi
         fi
+        run mkdir -p "$ICON_DIR"
+        run cp -a "$SCRIPT_DIR/cursor/$CURSOR_NAME/." "$ICON_DIR/"
+        if [ "$DRY_RUN" -eq 0 ]; then
+            printf 'chromeos-theme\n' > "$ICON_DIR/.chromeos-theme"
+        fi
+    else
+        skip "Mauszeiger uebersprungen (--no-cursor)."
     fi
-    run mkdir -p "$ICON_DIR"
-    run cp -a "$SCRIPT_DIR/cursor/$CURSOR_NAME/." "$ICON_DIR/"
-    if [ "$DRY_RUN" -eq 0 ]; then
-        printf 'chromeos-theme\n' > "$ICON_DIR/.chromeos-theme"
+
+    if [ "$OPT_FONTS" -eq 1 ]; then
+        info "Schrift Roboto nach $FONT_DIR (SIL OFL 1.1, liegt im Repo)"
+        run mkdir -p "$FONT_DIR"
+        run cp -a "$FONT_SRC/." "$FONT_DIR/"
+        if [ "$DRY_RUN" -eq 0 ]; then
+            printf 'chromeos-theme\n' > "$FONT_DIR/.chromeos-theme"
+        fi
+        if [ "$DRY_RUN" -eq 0 ] && command -v fc-cache >/dev/null 2>&1; then
+            fc-cache -f "$FONT_DIR" >/dev/null 2>&1 || warn "fc-cache lief nicht durch - Schrift greift nach dem naechsten Anmelden."
+        fi
+    else
+        skip "Schriften uebersprungen (--no-fonts)."
     fi
 
     info "GTK-4-Farben nach $GTK4_FILE (libadwaita ignoriert gtk-theme)"
-    run mkdir -p "$GTK4_DIR"
-    if [ -f "$GTK4_FILE" ] && ! grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null; then
-        info "Vorhandene GTK-4-Datei wird gesichert"
-        run cp -a "$GTK4_FILE" "$GTK4_BACKUP"
+    if [ "$OPT_GTK4" -eq 1 ]; then
+        run mkdir -p "$GTK4_DIR"
+        if [ -f "$GTK4_FILE" ] && ! grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null; then
+            info "Vorhandene GTK-4-Datei wird gesichert"
+            run cp -a "$GTK4_FILE" "$GTK4_BACKUP"
+        fi
+        run cp -a "$SCRIPT_DIR/theme/$THEME_NAME/gtk-4.0/gtk.css" "$GTK4_FILE"
+    else
+        skip "GTK-4-Farben uebersprungen (--no-gtk4)."
     fi
-    run cp -a "$SCRIPT_DIR/theme/$THEME_NAME/gtk-4.0/gtk.css" "$GTK4_FILE"
 }
 
 # --- 2. Einstellungen ------------------------------------------------------
@@ -297,14 +353,23 @@ apply_settings() {
     set_key org.gnome.desktop.interface document-font-name "Roboto 11"
     set_key org.gnome.desktop.interface monospace-font-name "Roboto Mono 10"
 
-    set_key org.gnome.desktop.interface cursor-theme "$CURSOR_NAME"
-    set_key org.gnome.desktop.interface cursor-size "24"
+    if [ "$OPT_CURSOR" -eq 1 ]; then
+        set_key org.gnome.desktop.interface cursor-theme "$CURSOR_NAME"
+        set_key org.gnome.desktop.interface cursor-size "24"
+    else
+        skip "Mauszeiger-Einstellungen uebersprungen (--no-cursor)."
+    fi
 
     # Der GNOME-Hot-Corner (oben links) existiert in ChromeOS nicht.
     set_key org.gnome.desktop.interface enable-hot-corners "false"
 
+    # Akku-Prozent neben dem Symbol zeigt ChromeOS dauerhaft an.
+    set_key org.gnome.desktop.interface show-battery-percentage "true"
+
     # ChromeOS hat keinen Desktop: DING zeigt keine Symbole mehr.
-    if have_schema org.gnome.shell.extensions.ding; then
+    if [ "$OPT_DING" -eq 0 ]; then
+        skip "Desktop-Symbole unveraendert (--no-ding)."
+    elif have_schema org.gnome.shell.extensions.ding; then
         set_key org.gnome.shell.extensions.ding show-home "false"
         set_key org.gnome.shell.extensions.ding show-trash "false"
         set_key org.gnome.shell.extensions.ding show-other-volumes "false"
@@ -394,11 +459,180 @@ activate_extension() {
     fi
 }
 
+# --- 4. Pruefmodus (--check) -----------------------------------------------
+CHECK_FAILED=0
+
+unquote() {
+    local value=$1
+    value=${value#\'}
+    value=${value%\'}
+    printf '%s' "$value"
+}
+
+expect_value() {
+    local label=$1 actual=$2 want=$3
+    # gsettings liefert Zeichenketten in Anfuehrungszeichen, je nach Quelle
+    # auch ohne - fuer den Vergleich zaehlt der Wert.
+    if [ "$(unquote "$actual")" = "$(unquote "$want")" ]; then
+        ok "$label = $actual"
+    else
+        printf '%s   x%s %s: erwartet %s, ist %s\n' \
+            "$C_RED" "$C_OFF" "$label" "$want" "${actual:-<leer>}" >&2
+        CHECK_FAILED=$((CHECK_FAILED + 1))
+    fi
+}
+
+expect_file() {
+    local label=$1 path=$2
+    if [ -f "$path" ]; then
+        ok "$label"
+    else
+        printf '%s   x%s %s fehlt: %s\n' "$C_RED" "$C_OFF" "$label" "$path" >&2
+        CHECK_FAILED=$((CHECK_FAILED + 1))
+    fi
+}
+
+query_key() {
+    gsettings get "$1" "$2" 2>/dev/null
+}
+
+check_state() {
+    info "Pruefe Dateien"
+    expect_file "Shell-Theme" "$THEME_DIR/gnome-shell/gnome-shell.css"
+    expect_file "Theme-Markierung" "$THEME_DIR/.chromeos-theme"
+    expect_file "Extension" "$EXT_DIR/metadata.json"
+
+    if [ -x "$BIN_DIR/chromeos-search-url" ]; then
+        ok "Suchhelfer"
+    else
+        printf '%s   x%s Suchhelfer fehlt oder ist nicht ausfuehrbar: %s\n' \
+            "$C_RED" "$C_OFF" "$BIN_DIR/chromeos-search-url" >&2
+        CHECK_FAILED=$((CHECK_FAILED + 1))
+    fi
+
+    if [ "$OPT_WALLPAPER" -eq 1 ]; then
+        expect_file "Hintergrund" "$WALLPAPER"
+    fi
+
+    if [ "$OPT_CURSOR" -eq 1 ]; then
+        expect_file "Mauszeiger-Markierung" "$ICON_DIR/.chromeos-theme"
+        local count=0
+        if [ -d "$ICON_DIR/cursors" ]; then
+            count=$(find "$ICON_DIR/cursors" -maxdepth 1 -type f 2>/dev/null | wc -l)
+        fi
+        if [ "$count" -ge 52 ]; then
+            ok "Mauszeiger-Dateien: $count"
+        else
+            printf '%s   x%s Mauszeiger: %s statt mindestens 52 Dateien\n' \
+                "$C_RED" "$C_OFF" "$count" >&2
+            CHECK_FAILED=$((CHECK_FAILED + 1))
+        fi
+    fi
+
+    if [ "$OPT_FONTS" -eq 1 ]; then
+        expect_file "Schrift Roboto" "$FONT_DIR/Roboto[wdth,wght].ttf"
+        expect_file "Schrift Roboto Mono" "$FONT_DIR/RobotoMono[wght].ttf"
+        if command -v fc-match >/dev/null 2>&1; then
+            case "$(fc-match 'Roboto' 2>/dev/null)" in
+                *Roboto*) ok "fontconfig kennt Roboto" ;;
+                *) warn "fontconfig zeigt noch nicht auf Roboto - nach dem naechsten Anmelden erneut pruefen." ;;
+            esac
+        fi
+    fi
+
+    if [ "$OPT_GTK4" -eq 1 ]; then
+        if [ -f "$GTK4_FILE" ] && grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null; then
+            ok "GTK-4-Farbdatei"
+        else
+            printf '%s   x%s GTK-4-Farbdatei fehlt: %s\n' "$C_RED" "$C_OFF" "$GTK4_FILE" >&2
+            CHECK_FAILED=$((CHECK_FAILED + 1))
+        fi
+    fi
+
+    if [ "$HAVE_GSETTINGS" -eq 0 ]; then
+        warn "Kein gsettings gefunden - Einstellungen werden nicht geprueft."
+    else
+        info "Pruefe Einstellungen"
+        expect_value "gtk-theme" "$(query_key org.gnome.desktop.interface gtk-theme)" "'$THEME_NAME'"
+        expect_value "color-scheme" "$(query_key org.gnome.desktop.interface color-scheme)" "'default'"
+        expect_value "enable-hot-corners" "$(query_key org.gnome.desktop.interface enable-hot-corners)" "false"
+        expect_value "show-battery-percentage" "$(query_key org.gnome.desktop.interface show-battery-percentage)" "true"
+        expect_value "font-name" "$(query_key org.gnome.desktop.interface font-name)" "'Roboto 11'"
+        expect_value "titlebar-font" "$(query_key org.gnome.desktop.wm.preferences titlebar-font)" "'Roboto 11'"
+        expect_value "document-font-name" "$(query_key org.gnome.desktop.interface document-font-name)" "'Roboto 11'"
+        expect_value "monospace-font-name" "$(query_key org.gnome.desktop.interface monospace-font-name)" "'Roboto Mono 10'"
+        expect_value "button-layout" "$(query_key org.gnome.desktop.wm.preferences button-layout)" "':minimize,maximize,close'"
+        if [ "$OPT_CURSOR" -eq 1 ]; then
+            expect_value "cursor-theme" "$(query_key org.gnome.desktop.interface cursor-theme)" "'$CURSOR_NAME'"
+            expect_value "cursor-size" "$(query_key org.gnome.desktop.interface cursor-size)" "24"
+        fi
+        if [ "$OPT_DING" -eq 1 ] && have_schema org.gnome.shell.extensions.ding; then
+            expect_value "DING show-home" "$(query_key org.gnome.shell.extensions.ding show-home)" "false"
+            expect_value "DING show-trash" "$(query_key org.gnome.shell.extensions.ding show-trash)" "false"
+            expect_value "DING show-other-volumes" "$(query_key org.gnome.shell.extensions.ding show-other-volumes)" "false"
+        fi
+    fi
+
+    if [ "$HAVE_GNOME_EXT" -eq 1 ] && [ -n "$SHELL_MAJOR" ]; then
+        if gnome-extensions list --enabled 2>/dev/null | grep -qxF "$EXT_UUID"; then
+            ok "Extension aktiviert"
+        else
+            warn "Extension ist nicht aktiv - nach dem Anmelden: ./install.sh --activate"
+        fi
+    fi
+
+    if [ "$CHECK_FAILED" -gt 0 ]; then
+        printf '\n%d Abweichung(en). Abhilfe: %s/install.sh\n' "$CHECK_FAILED" "$SCRIPT_DIR" >&2
+        return 1
+    fi
+    printf '\nAlles wie erwartet.\n'
+    return 0
+}
+
+# Haelt fest, welche Teile installiert wurden, damit uninstall.sh nur die
+# wieder entfernt. Wird ergaenzt, nicht ueberschrieben: ein spaeterer Lauf mit
+# --no-cursor soll einen frueher installierten Mauszeiger nicht vergessen.
+record_components() {
+    [ "$DRY_RUN" -eq 0 ] || return 0
+    mkdir -p "$STATE_DIR"
+    local component
+    for component in theme extension helper settings; do
+        grep -qxF "$component" "$COMPONENTS_FILE" 2>/dev/null \
+            || printf '%s\n' "$component" >> "$COMPONENTS_FILE"
+    done
+    [ "$OPT_WALLPAPER" -eq 1 ] && { grep -qxF wallpaper "$COMPONENTS_FILE" 2>/dev/null || printf 'wallpaper\n' >> "$COMPONENTS_FILE"; }
+    [ "$OPT_CURSOR" -eq 1 ] && { grep -qxF cursor "$COMPONENTS_FILE" 2>/dev/null || printf 'cursor\n' >> "$COMPONENTS_FILE"; }
+    [ "$OPT_GTK4" -eq 1 ] && { grep -qxF gtk4 "$COMPONENTS_FILE" 2>/dev/null || printf 'gtk4\n' >> "$COMPONENTS_FILE"; }
+    [ "$OPT_FONTS" -eq 1 ] && { grep -qxF fonts "$COMPONENTS_FILE" 2>/dev/null || printf 'fonts\n' >> "$COMPONENTS_FILE"; }
+    return 0
+}
+
+# Abbruch mittendrin: die Dateien bleiben liegen (uninstall.sh raeumt sie),
+# aber die schon gesetzten Einstellungen kommen zurueck.
+on_abort() {
+    trap - INT TERM
+    warn "Abgebrochen - gesicherte Einstellungen werden zurueckgeholt."
+    if [ "$DRY_RUN" -eq 0 ] && [ -f "$BACKUP_FILE" ]; then
+        bash "$SCRIPT_DIR/uninstall.sh" --settings-only >/dev/null 2>&1 \
+            || warn "Bitte manuell aufraeumen: $SCRIPT_DIR/uninstall.sh"
+    fi
+    printf 'Dateien und Reste entfernen: %s/uninstall.sh\n' "$SCRIPT_DIR"
+    exit 130
+}
+
 # --- Ablauf ----------------------------------------------------------------
+if [ "$CHECK_ONLY" -eq 1 ]; then
+    check_state
+    exit $?
+fi
+
 if [ "$ACTIVATE_ONLY" -eq 0 ]; then
+    record_components
+    trap on_abort INT TERM
     install_files
     apply_settings
     disable_conflicts
+    trap - INT TERM
 else
     info "Nur aktivieren (Dateien bleiben unveraendert)"
     apply_settings

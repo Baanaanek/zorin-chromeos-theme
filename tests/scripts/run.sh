@@ -77,7 +77,8 @@ DATA="$TEST_HOME/.local/share"
 THEME_DIR="$DATA/themes/$THEME_NAME"
 EXT_DIR="$DATA/gnome-shell/extensions/$UUID"
 HELPER="$TEST_HOME/.local/bin/chromeos-search-url"
-WALLPAPER="$DATA/backgrounds/chromeos-wallpaper.jpg"
+WALLPAPER="$DATA/backgrounds/chromeos-wallpaper.png"
+FONT_DIR="$DATA/fonts/$THEME_NAME"
 STATE_DIR="$TEST_HOME/.local/state/chromeos-theme"
 BACKUP_FILE="$STATE_DIR/settings.tsv"
 ICON_DIR="$DATA/icons/$THEME_NAME"
@@ -100,6 +101,7 @@ printf '%s\t%s\t%s\n' \
     'org.gnome.desktop.interface' 'clock-show-seconds' 'false' \
     'org.gnome.desktop.interface' 'font-name' "'Inter 10'" \
     'org.gnome.desktop.interface' 'enable-hot-corners' 'true' \
+    'org.gnome.desktop.interface' 'show-battery-percentage' 'false' \
     'org.gnome.shell.extensions.ding' 'show-home' 'true' \
     'org.gnome.shell.extensions.ding' 'show-trash' 'true' \
     'org.gnome.shell.extensions.ding' 'show-other-volumes' 'true' \
@@ -146,7 +148,7 @@ settings_restored() {
 
 extension_files_ok() {
     local file
-    for file in extension.js launcher.js shelf.js theme.js search.js \
+    for file in extension.js launcher.js shelf.js theme.js search.js menu.js \
                 stylesheet.css metadata.json icons/launcher.svg; do
         [ -f "$EXT_DIR/$file" ] || return 1
     done
@@ -160,11 +162,11 @@ clocks_ok() {
 
 background_ok() {
     case "$(gget org.gnome.desktop.background picture-uri)" in
-        file://*chromeos-wallpaper.jpg) ;;
+        file://*chromeos-wallpaper.png) ;;
         *) return 1 ;;
     esac
     case "$(gget org.gnome.desktop.background picture-uri-dark)" in
-        file://*chromeos-wallpaper.jpg) ;;
+        file://*chromeos-wallpaper.png) ;;
         *) return 1 ;;
     esac
     [ "$(gget org.gnome.desktop.background picture-options)" = 'zoom' ]
@@ -263,6 +265,14 @@ check '--help endet mit 0' eq "$?" 0
 check '--help nennt die Deinstallation' has_text "$OUT" 'Deinstallation'
 run_stub install.sh --unsinn >"$OUT" 2>&1
 check 'unbekannte Option endet mit 2' eq "$?" 2
+run_stub install.sh --version >"$OUT" 2>&1
+check '--version endet mit 0' eq "$?" 0
+check '--version nennt die Version' has_text "$OUT" 'chromeos-theme 1.1.0'
+run_stub install.sh --check >"$OUT" 2>"$ERR"
+check '--check meldet vor der Installation Abweichungen' eq "$?" 1
+check '--check nennt die fehlenden Teile' has_text "$ERR" 'fehlt'
+check '--check legt nichts an' missing "$THEME_DIR"
+check '--check schreibt keine Einstellungen' missing "$STUB_STATE/gsettings-set.log"
 
 # --- 3. Echter Lauf --------------------------------------------------------
 run_stub install.sh >"$OUT" 2>"$ERR"
@@ -275,8 +285,18 @@ check 'Theme ist markiert' has_text "$THEME_DIR/.chromeos-theme" 'chromeos-theme
 check 'Extension mit allen Dateien installiert' extension_files_ok
 check 'Suchhelfer installiert und ausfuehrbar' bash -c '[ -x "$1" ]' _ "$HELPER"
 check 'Hintergrundbild installiert' exists "$WALLPAPER"
-check 'Sicherung enthaelt 21 Einstellungen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 21 ]' _ "$BACKUP_FILE"
+check 'Hintergrund ist ein eigenes PNG' \
+    bash -c '[ "$(od -An -tx1 -N4 "$1" | tr -d " \n")" = "89504e47" ]' _ "$WALLPAPER"
+check 'Sicherung enthaelt 22 Einstellungen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 22 ]' _ "$BACKUP_FILE"
+check 'installierte Teile festgehalten' bash -c '
+    for part in theme extension helper settings wallpaper cursor gtk4 fonts; do
+        grep -qxF "$part" "$1" || exit 1
+    done' _ "$STATE_DIR/components.txt"
+check 'Schrift Roboto liegt im Benutzerordner' bash -c '
+    [ -s "$1/Roboto[wdth,wght].ttf" ] && [ -s "$1/RobotoMono[wght].ttf" ] &&
+    grep -q "SIL Open Font License" "$1/OFL.txt"' _ "$FONT_DIR"
+check 'Schriften sind markiert' has_text "$FONT_DIR/.chromeos-theme" 'chromeos-theme'
 check 'gtk-theme ist ChromeOS' gset org.gnome.desktop.interface gtk-theme 'ChromeOS'
 check 'color-scheme ist default' gset org.gnome.desktop.interface color-scheme 'default'
 check 'accent-color ist blue' gset org.gnome.desktop.interface accent-color 'blue'
@@ -291,6 +311,7 @@ check 'cursor-theme ist ChromeOS' gset org.gnome.desktop.interface cursor-theme 
 check 'cursor-size ist 24' gset org.gnome.desktop.interface cursor-size '24'
 check 'Hot Corner ist aus' gset org.gnome.desktop.interface enable-hot-corners 'false'
 check 'Fenster-, Dokument- und Monospace-Schrift gesetzt' fonts_ok
+check 'Akku-Prozent wird angezeigt' gset org.gnome.desktop.interface show-battery-percentage 'true'
 check 'DING zeigt keine Desktop-Symbole' ding_off
 check 'GTK-4-Farbdatei installiert (libadwaita)' gtk4_ours
 check 'GTK-4-Datei deckt hell und dunkel ab' bash -c '
@@ -302,12 +323,15 @@ check 'Zorin-Leisten wurden deaktiviert' bash -c '
     _ "$STUB_STATE/ext-disable.log"
 check 'Extension wurde aktiviert' line_is "$STUB_STATE/ext-enabled.txt" "$UUID"
 check 'Installation meldet "Fertig."' has_text "$OUT" 'Fertig.'
+run_stub install.sh --check >"$OUT" 2>"$ERR"
+check '--check ist nach der Installation gruen' eq "$?" 0
+check '--check meldet "Alles wie erwartet"' has_text "$OUT" 'Alles wie erwartet'
 
 # --- 4. Zweiter Lauf (idempotent) -----------------------------------------
 run_stub install.sh >"$OUT" 2>"$ERR"
 check 'zweiter Lauf endet mit 0' eq "$?" 0
-check 'Sicherung bleibt bei 21 Eintraegen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 21 ]' _ "$BACKUP_FILE"
+check 'Sicherung bleibt bei 22 Eintraegen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 22 ]' _ "$BACKUP_FILE"
 check 'kein Theme-Backup und keine Dopplung' \
     bash -c '[ -d "$1" ] && [ ! -e "$1.bak" ]' _ "$THEME_DIR"
 
@@ -335,7 +359,8 @@ check 'Extension, Helfer und Hintergrund entfernt' \
     _ "$EXT_DIR" "$HELPER" "$WALLPAPER"
 check 'Zustandsordner entfernt' missing "$STATE_DIR"
 check 'Mauszeiger-Satz entfernt' missing "$ICON_DIR"
-check 'alle 21 Einstellungen exakt wiederhergestellt' settings_restored
+check 'Schriften entfernt' missing "$FONT_DIR"
+check 'alle 22 Einstellungen exakt wiederhergestellt' settings_restored
 check 'vorher nie gesetzte Keys bleiben ungesetzt' unset_after_uninstall
 check 'keine zusaetzlichen Keys in der Datenbank' no_extra_keys
 check 'GTK-4-Datei des Nutzers unveraendert zurueck' has_text "$GTK4_FILE" 'eigene Anpassung'
@@ -360,6 +385,32 @@ check 'ohne GNOME wird trotzdem vollstaendig aufgeraeumt' \
     bash -c '[ ! -e "$1" ] && [ ! -e "$2" ] && [ ! -e "$3" ]' \
     _ "$THEME_DIR" "$EXT_DIR" "$HELPER"
 check 'ohne GNOME kommt auch die GTK-4-Datei zurueck' has_text "$GTK4_FILE" 'eigene Anpassung'
+
+# --- 9. Teilinstallation, --settings-only, zweite Deinstallation -----------
+run_stub install.sh --no-cursor --no-gtk4 >"$OUT" 2>"$ERR"
+check 'Teilinstallation endet mit 0' eq "$?" 0
+check '--no-cursor laesst den Mauszeiger weg' missing "$ICON_DIR"
+check '--no-gtk4 laesst die GTK-4-Datei des Nutzers stehen' \
+    has_text "$GTK4_FILE" 'eigene Anpassung'
+check 'Teilinstallation haelt nur ihre Teile fest' bash -c '
+    grep -qxF theme "$1" && grep -qxF fonts "$1" && ! grep -qxF cursor "$1"' \
+    _ "$STATE_DIR/components.txt"
+
+run_stub uninstall.sh --settings-only >"$OUT" 2>"$ERR"
+check '--settings-only endet mit 0' eq "$?" 0
+check '--settings-only laesst die Dateien stehen' \
+    bash -c '[ -f "$1/gnome-shell/gnome-shell.css" ] && [ -d "$2" ]' _ "$THEME_DIR" "$EXT_DIR"
+check '--settings-only holt die Einstellungen zurueck' settings_restored
+check '--settings-only behaelt den Zustandsordner' exists "$STATE_DIR"
+
+run_stub uninstall.sh >"$OUT" 2>"$ERR"
+check 'zweite Deinstallation endet mit 0' eq "$?" 0
+check 'zweite Deinstallation entfernt den Rest' \
+    bash -c '[ ! -e "$1" ] && [ ! -e "$2" ] && [ ! -e "$3" ]' \
+    _ "$THEME_DIR" "$FONT_DIR" "$WALLPAPER"
+check 'nie installierter Cursor bleibt unberuehrt' missing "$ICON_DIR"
+check 'GTK-4-Datei des Nutzers bleibt beim zweiten Lauf heil' \
+    has_text "$GTK4_FILE" 'eigene Anpassung'
 
 # --- Ergebnis --------------------------------------------------------------
 printf '\n%s/%s Pruefungen bestanden\n' "$PASSED" "$TOTAL"

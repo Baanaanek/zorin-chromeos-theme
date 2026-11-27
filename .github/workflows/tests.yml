@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  harnesses:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Skript-Harness (install/uninstall gegen Stubs)
+        run: bash tests/scripts/run.sh .
+
+      - name: Extension-Harness (Lifecycle gegen GNOME-Mocks)
+        run: node tests/extension/lifecycle.mjs .
+
+      - name: Erzeugte Assets und Farben pruefen
+        run: |
+          node tools/build-cursors.mjs --check
+          node tools/build-wallpapers.mjs --check
+          node tools/check-contrast.mjs
+          node tools/check-settings.mjs

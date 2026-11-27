@@ -1,0 +1,35 @@
+{
+  "_comment": "Welche GNOME-Version einen Schluessel kennt. install.sh darf nur Schluessel aus dieser Liste setzen; ein Eintrag ohne 'since' ist ein Fehler. 'note' erklaert Schluessel, die auf dem Zielsystem (Zorin OS 18 = GNOME 46) noch nicht existieren.",
+  "org.gnome.desktop.interface": {
+    "gtk-theme": {"since": 3},
+    "color-scheme": {"since": 42},
+    "accent-color": {"since": 47, "note": "GNOME 46 kennt den Schluessel nicht; install.sh setzt ihn ohne Wirkung und uninstall.sh raeumt ihn wieder ab."},
+    "clock-show-date": {"since": 3},
+    "clock-show-weekday": {"since": 3},
+    "clock-show-seconds": {"since": 3},
+    "font-name": {"since": 3},
+    "document-font-name": {"since": 3},
+    "monospace-font-name": {"since": 3},
+    "cursor-theme": {"since": 3},
+    "cursor-size": {"since": 3},
+    "enable-hot-corners": {"since": 3},
+    "show-battery-percentage": {"since": 3}
+  },
+  "org.gnome.desktop.wm.preferences": {
+    "titlebar-font": {"since": 3},
+    "button-layout": {"since": 3}
+  },
+  "org.gnome.desktop.background": {
+    "picture-uri": {"since": 3},
+    "picture-uri-dark": {"since": 42},
+    "picture-options": {"since": 3}
+  },
+  "org.gnome.shell": {
+    "favorite-apps": {"since": 3}
+  },
+  "org.gnome.shell.extensions.ding": {
+    "show-home": {"since": 43},
+    "show-trash": {"since": 46},
+    "show-other-volumes": {"since": 43}
+  }
+}

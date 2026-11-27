@@ -257,6 +257,60 @@ check('Web-Zeile nennt Standardbrowser und Engine', () => {
         throw new Error('Engine-Name fehlt');
     return true;
 });
+// ------------------------------------------------------------- Neue UI-Teile
+check('Loesch-Knopf erscheint erst mit Text', () => {
+    launcher.show();
+    eq(launcher._clearButton.visible, false, 'leeres Feld');
+    launcher.entry.set_text('term');
+    eq(launcher._clearButton.visible, true, 'mit Text');
+    return true;
+});
+check('Loesch-Knopf leert das Feld und zeigt wieder alle Apps', () => {
+    launcher.entry.set_text('term');
+    launcher._clearButton.emit('clicked');
+    eq(launcher.entry.get_text(), '', 'Feld');
+    eq(launcher._clearButton.visible, false, 'Knopf');
+    const attached = launcher.content.get_children()[1].layout_manager.attached;
+    eq(attached.length, apps.installed.length, 'Raster');
+    return true;
+});
+check('Seitenpunkte bleiben bei einer Seite verborgen', () => {
+    launcher.show();
+    const adjustment = launcher.scroll.vscroll.adjustment;
+    adjustment.upper = 600;
+    adjustment.page_size = 500;
+    adjustment.emit('changed');
+    eq(launcher._dots.visible, false);
+    return true;
+});
+check('Seitenpunkte erscheinen bei mehreren Seiten', () => {
+    launcher.show();
+    const adjustment = launcher.scroll.vscroll.adjustment;
+    adjustment.upper = 2000;
+    adjustment.page_size = 500;
+    adjustment.value = 0;
+    adjustment.emit('changed');
+    eq(launcher._dots.visible, true);
+    eq(launcher._dots.get_children().length, 4, 'vier Seiten');
+    eq(launcher._dots.get_children()[0].has_style_class_name('chromeos-page-dot-active'),
+        true, 'erste aktiv');
+    return true;
+});
+check('Seitenpunkte folgen der Scrollposition', () => {
+    const adjustment = launcher.scroll.vscroll.adjustment;
+    adjustment.value = 1000;
+    adjustment.emit('changed');
+    const dots = launcher._dots.get_children();
+    eq(dots[2].has_style_class_name('chromeos-page-dot-active'), true, 'dritte aktiv');
+    eq(dots[0].has_style_class_name('chromeos-page-dot-active'), false, 'erste inaktiv');
+    return true;
+});
+check('Seitenpunkte verschwinden beim Suchen', () => {
+    launcher.entry.set_text('term');
+    eq(launcher._dots.visible, false);
+    return true;
+});
+
 check('Enter startet den ersten Treffer', () => {
     launcher.show();
     launcher.entry.set_text('term');
