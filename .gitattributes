@@ -1,0 +1,11 @@
+# Dieses Repo ist fuer Linux gedacht: Textdateien liegen immer mit LF im
+# Arbeitsbaum, unabhaengig von core.autocrlf auf Windows.
+* text=auto eol=lf
+*.sh text eol=lf
+bin/chromeos-search-url text eol=lf
+
+# Binaerdateien nie konvertieren.
+*.jpg binary
+*.webp binary
+*.png binary
+*.ico binary
