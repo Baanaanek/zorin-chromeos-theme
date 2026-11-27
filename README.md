@@ -321,7 +321,7 @@ Dazu drei Prüfungen ohne GNOME-Bezug:
 
 | Werkzeug | Inhalt |
 | --- | --- |
-| `tools/build-wallpapers.mjs --check` | Hintergründe sind gültige PNGs und exakt der Stand des Generators, keine fremden Bilder im Ordner |
+| `tools/build-wallpapers.mjs --check` | Hintergründe sind gültige PNGs, ihre Pixel entsprechen dem Generator (Byte-Vergleich scheidet aus, zlib komprimiert je nach Laufzeit anders), keine fremden Bilder im Ordner |
 | `tools/check-contrast.mjs` | 17 Text-/Akzentpaare der GTK-4-Tokens erfüllen WCAG AA in hell und dunkel; beide Modi definieren dieselben Tokens |
 | `tools/check-settings.mjs` | jeder `set_key`-Aufruf steht in `data/settings-keys.json` und die Matrix enthält keinen ungenutzten Schlüssel |
 
@@ -395,7 +395,8 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
   (`Shell.App.should_show()`, `get_keywords()`) und Legacy-Importe
   (`imports.*`, `ExtensionUtils`) kommen nicht vor.
 - **Ohne GNOME prüfbar:** `bun tools/build-wallpapers.mjs --check` (drei
-  gültige PNGs, exakt der Generatorstand, keine fremden Bilder im Ordner),
+  gültige PNGs, Pixel entsprechend dem Generatorstand, keine fremden Bilder
+  im Ordner),
   `bun tools/check-contrast.mjs` (17 Farbpaare erfüllen WCAG AA in hell und
   dunkel, beide Modi definieren dieselben Tokens) und
   `bun tools/check-settings.mjs` (jeder gesetzte Schlüssel steht mit

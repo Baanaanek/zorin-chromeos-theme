@@ -131,6 +131,19 @@ function chunk(type, data) {
     return Buffer.concat([length, typeAndData, crc]);
 }
 
+// Rohe Scanlines mit Filterbyte je Zeile - die Grundlage fuer Vergleich und
+// Kodierung. Der Deflate-Lauf unterscheidet sich je nach zlib-Version, die
+// Pixel nicht.
+function rawScanlines(pixels) {
+    const stride = WIDTH * 3;
+    const raw = Buffer.allocUnsafe(HEIGHT * (stride + 1));
+    for (let y = 0; y < HEIGHT; y++) {
+        raw[y * (stride + 1)] = 0;
+        pixels.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
+    }
+    return raw;
+}
+
 function encodePng(pixels) {
     const header = Buffer.alloc(13);
     header.writeUInt32BE(WIDTH, 0);
@@ -141,13 +154,7 @@ function encodePng(pixels) {
     header[11] = 0;  // Standardfilter
     header[12] = 0;  // nicht interlaced
 
-    // Jede Zeile bekommt ein fuehrendes Filterbyte (0 = None).
-    const stride = WIDTH * 3;
-    const raw = Buffer.allocUnsafe(HEIGHT * (stride + 1));
-    for (let y = 0; y < HEIGHT; y++) {
-        raw[y * (stride + 1)] = 0;
-        pixels.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
-    }
+    const raw = rawScanlines(pixels);
 
     return Buffer.concat([
         Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
@@ -193,6 +200,12 @@ function readPngInfo(buffer) {
     const expectedRaw = HEIGHT * (WIDTH * 3 + 1);
     if (raw.length !== expectedRaw)
         return {ok: false, reason: `Pixeldaten ${raw.length} statt ${expectedRaw} Byte`};
+    // Pixel fuer den Vergleich mit dem Generator mitgeben.
+    const pixels = Buffer.allocUnsafe(WIDTH * HEIGHT * 3);
+    for (let y = 0; y < HEIGHT; y++) {
+        const from = y * (WIDTH * 3 + 1) + 1;
+        raw.copy(pixels, y * WIDTH * 3, from, from + WIDTH * 3);
+    }
     let nonEmpty = 0;
     for (let i = 0; i < raw.length; i += 997) {
         if (raw[i] > 0)
@@ -200,7 +213,7 @@ function readPngInfo(buffer) {
     }
     if (nonEmpty === 0)
         return {ok: false, reason: 'Bild ist komplett schwarz'};
-    return {ok: true, width, height};
+    return {ok: true, width, height, pixels};
 }
 
 function check() {
@@ -224,10 +237,20 @@ function check() {
             failures++;
             continue;
         }
-        // Deterministisch: die Datei muss exakt dem Generator entsprechen.
-        const expected = buildPng(name);
-        if (!actual.equals(expected)) {
-            console.error(`${name}.png: weicht vom Generator ab (bun tools/build-wallpapers.mjs)`);
+        // Pixelvergleich statt Bytevergleich: zlib komprimiert je nach
+        // Laufzeit unterschiedlich, die Motive bleiben gleich. Eine Toleranz
+        // von 2 Stufen faengt Gleitkomma-Unterschiede zwischen Plattformen ab.
+        const expected = renderPixels(MOTIFS[name]);
+        let maxDiff = 0;
+        let sumDiff = 0;
+        for (let i = 0; i < expected.length; i++) {
+            const diff = Math.abs(expected[i] - info.pixels[i]);
+            if (diff > maxDiff)
+                maxDiff = diff;
+            sumDiff += diff;
+        }
+        if (maxDiff > 2) {
+            console.error(`${name}.png: weicht vom Generator ab (max. ${maxDiff} Stufen, Mittel ${(sumDiff / expected.length).toFixed(2)})`);
             failures++;
             continue;
         }
