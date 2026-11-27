@@ -1,0 +1,572 @@
+/* ChromeOS-Look fuer Zorin OS - GTK 3 (hell)
+ * Baut auf Adwaita auf und ueberschreibt Farben, Radien und Abstaende.
+ * Inoffiziell, keine Verbindung zu Google.
+ */
+
+@import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained.css");
+
+@define-color chromeos_accent #1a73e8;
+@define-color chromeos_accent_hover #1b66c9;
+@define-color chromeos_accent_soft alpha(#1a73e8, 0.12);
+
+@define-color theme_bg_color #f8f9fa;
+@define-color theme_fg_color #202124;
+@define-color theme_base_color #ffffff;
+@define-color theme_text_color #202124;
+@define-color theme_selected_bg_color #1a73e8;
+@define-color theme_selected_fg_color #ffffff;
+@define-color theme_unfocused_bg_color #f8f9fa;
+@define-color theme_unfocused_fg_color #5f6368;
+@define-color theme_unfocused_base_color #ffffff;
+@define-color theme_unfocused_text_color #202124;
+@define-color theme_unfocused_selected_bg_color #1a73e8;
+@define-color theme_unfocused_selected_fg_color #ffffff;
+@define-color insensitive_bg_color #f1f3f4;
+@define-color insensitive_fg_color #9aa0a6;
+@define-color insensitive_base_color #ffffff;
+@define-color borders #dadce0;
+@define-color unfocused_borders #e8eaed;
+@define-color headerbar_bg_color #f1f3f4;
+@define-color headerbar_fg_color #202124;
+@define-color headerbar_border_color #dadce0;
+@define-color headerbar_backdrop_color #f8f9fa;
+@define-color sidebar_bg_color #f1f3f4;
+@define-color sidebar_fg_color #202124;
+@define-color popover_bg_color #ffffff;
+@define-color popover_fg_color #202124;
+@define-color content_view_bg #ffffff;
+@define-color text_view_bg #ffffff;
+@define-color wm_title #3c4043;
+@define-color wm_unfocused_title #80868b;
+@define-color wm_bg #f1f3f4;
+@define-color wm_borders_edge #dadce0;
+@define-color link_color #1a73e8;
+@define-color success_color #1e8e3e;
+@define-color warning_color #f9ab00;
+@define-color error_color #d93025;
+
+/* ------------------------------------------------------------------ */
+/* Fenster                                                             */
+/* ------------------------------------------------------------------ */
+window,
+.background {
+  background-color: @theme_bg_color;
+  color: @theme_fg_color;
+}
+
+decoration {
+  border-radius: 12px 12px 12px 12px;
+  box-shadow: 0 8px 24px 2px alpha(#3c4043, 0.28);
+}
+
+decoration:backdrop {
+  box-shadow: 0 4px 12px 1px alpha(#3c4043, 0.22);
+}
+
+.csd decoration {
+  border-radius: 12px 12px 12px 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Titelleisten                                                        */
+/* ------------------------------------------------------------------ */
+headerbar,
+.titlebar {
+  min-height: 44px;
+  padding: 0 8px;
+  background-color: @headerbar_bg_color;
+  background-image: none;
+  border: none;
+  border-bottom: 1px solid alpha(#3c4043, 0.10);
+  border-radius: 12px 12px 0 0;
+  box-shadow: none;
+  color: @headerbar_fg_color;
+}
+
+headerbar:backdrop,
+.titlebar:backdrop {
+  background-color: @headerbar_backdrop_color;
+  border-bottom-color: alpha(#3c4043, 0.06);
+  box-shadow: none;
+}
+
+headerbar .title,
+.titlebar .title {
+  font-weight: 500;
+  font-size: 10.5pt;
+  color: #3c4043;
+  padding: 0 12px;
+}
+
+headerbar .subtitle,
+.titlebar .subtitle {
+  font-size: 9pt;
+  color: #5f6368;
+}
+
+headerbar button.titlebutton,
+.titlebar button.titlebutton {
+  min-width: 24px;
+  min-height: 24px;
+  margin: 0 2px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  color: #3c4043;
+}
+
+headerbar button.titlebutton:hover,
+.titlebar button.titlebutton:hover {
+  background-color: alpha(#3c4043, 0.10);
+}
+
+headerbar button.titlebutton:active,
+.titlebar button.titlebutton:active {
+  background-color: alpha(#3c4043, 0.18);
+}
+
+headerbar button.titlebutton.close:hover,
+.titlebar button.titlebutton.close:hover {
+  background-color: #d93025;
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons                                                             */
+/* ------------------------------------------------------------------ */
+button {
+  min-height: 24px;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background-image: none;
+  box-shadow: none;
+  background-color: transparent;
+  color: @theme_fg_color;
+  font-weight: 500;
+  transition: background-color 120ms ease-out;
+}
+
+button:hover {
+  background-color: alpha(#3c4043, 0.08);
+  border-color: transparent;
+}
+
+button:active,
+button:checked {
+  background-color: alpha(#3c4043, 0.14);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+button:disabled {
+  background-color: transparent;
+  color: @insensitive_fg_color;
+}
+
+button.flat,
+button.flat:hover {
+  border-color: transparent;
+}
+
+button.flat:hover {
+  background-color: alpha(#3c4043, 0.08);
+}
+
+button.text-button {
+  padding: 6px 12px;
+}
+
+button.circular,
+button.circular-button {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px;
+  border-radius: 999px;
+}
+
+button.suggested-action {
+  background-color: @chromeos_accent;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+button.suggested-action:hover {
+  background-color: @chromeos_accent_hover;
+}
+
+button.suggested-action:active {
+  background-color: #185abc;
+}
+
+button.destructive-action {
+  background-color: #d93025;
+  color: #ffffff;
+}
+
+button.destructive-action:hover {
+  background-color: #b3261e;
+}
+
+button.destructive-action:active {
+  background-color: #a50e0e;
+}
+
+/* ChromeOS: heller "getoenter" Button fuer Dialoge */
+button.default {
+  border-color: @chromeos_accent;
+}
+
+/* ------------------------------------------------------------------ */
+/* Eingaben                                                            */
+/* ------------------------------------------------------------------ */
+entry,
+spinbutton,
+searchentry,
+.searchbar entry {
+  min-height: 24px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid @borders;
+  background-color: @theme_base_color;
+  background-image: none;
+  box-shadow: none;
+  color: @theme_text_color;
+  caret-color: @chromeos_accent;
+}
+
+entry:hover {
+  border-color: #bdc1c6;
+}
+
+entry:focus,
+entry:focus-within,
+spinbutton:focus {
+  border-color: @chromeos_accent;
+  box-shadow: 0 0 0 1px @chromeos_accent inset;
+}
+
+entry:disabled {
+  background-color: @insensitive_bg_color;
+  color: @insensitive_fg_color;
+}
+
+entry image {
+  color: #5f6368;
+}
+
+entry selection,
+textview selection,
+label selection {
+  background-color: @theme_selected_bg_color;
+  color: @theme_selected_fg_color;
+}
+
+/* ------------------------------------------------------------------ */
+/* Menues, Popover, Tooltips                                           */
+/* ------------------------------------------------------------------ */
+menu,
+.menu,
+.context-menu {
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  background-color: @popover_bg_color;
+  box-shadow: 0 2px 6px 2px alpha(#3c4043, 0.15), 0 1px 2px alpha(#3c4043, 0.30);
+  color: @popover_fg_color;
+}
+
+menuitem,
+menu menuitem {
+  min-height: 24px;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+menuitem:hover {
+  background-color: alpha(#3c4043, 0.08);
+}
+
+menuitem:disabled {
+  color: @insensitive_fg_color;
+}
+
+popover.background {
+  padding: 6px;
+  border-radius: 12px;
+  background-color: @popover_bg_color;
+  box-shadow: 0 2px 6px 2px alpha(#3c4043, 0.15), 0 1px 2px alpha(#3c4043, 0.30);
+  border: none;
+}
+
+popover.background > list,
+popover.background > .view,
+popover.background > toolbar {
+  border: none;
+  background-color: transparent;
+}
+
+tooltip {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background-color: #3c4043;
+  color: #ffffff;
+  box-shadow: none;
+  border: none;
+}
+
+tooltip label {
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Listen, Seitenleisten, Baumansichten                                */
+/* ------------------------------------------------------------------ */
+list,
+list.view,
+.view,
+treeview.view {
+  background-color: @theme_base_color;
+  color: @theme_text_color;
+  border-radius: 8px;
+}
+
+list row,
+.view row {
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+list row:hover,
+.view row:hover {
+  background-color: alpha(#3c4043, 0.06);
+}
+
+list row:selected,
+.view row:selected,
+treeview.view:selected {
+  background-color: @chromeos_accent_soft;
+  color: @theme_fg_color;
+}
+
+list row:selected:hover {
+  background-color: alpha(#1a73e8, 0.18);
+}
+
+stacksidebar list,
+.sidebar,
+placessidebar,
+.sidebar list {
+  background-color: @sidebar_bg_color;
+  color: @sidebar_fg_color;
+  border: none;
+  border-radius: 0;
+}
+
+placessidebar list row {
+  border-radius: 0 999px 999px 0;
+  padding: 8px 12px;
+  margin: 2px 6px 2px 0;
+}
+
+placessidebar list row:selected {
+  background-color: alpha(#1a73e8, 0.14);
+  color: #174ea6;
+}
+
+/* ------------------------------------------------------------------ */
+/* Schalter, Checkboxen, Radios                                        */
+/* ------------------------------------------------------------------ */
+switch {
+  min-width: 40px;
+  min-height: 22px;
+  border-radius: 999px;
+  background-color: alpha(#3c4043, 0.28);
+  border: none;
+  box-shadow: none;
+  transition: background-color 120ms ease-out;
+}
+
+switch:checked {
+  background-color: @chromeos_accent;
+}
+
+switch slider {
+  min-width: 18px;
+  min-height: 18px;
+  margin: 2px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px alpha(#3c4043, 0.35);
+  border: none;
+}
+
+switch:disabled {
+  background-color: alpha(#3c4043, 0.12);
+}
+
+checkbutton check,
+check {
+  min-width: 18px;
+  min-height: 18px;
+  border-radius: 4px;
+  border: 2px solid #5f6368;
+  background-color: transparent;
+  background-image: none;
+}
+
+check:checked,
+check:indeterminate {
+  background-color: @chromeos_accent;
+  border-color: @chromeos_accent;
+  color: #ffffff;
+}
+
+radiobutton radio,
+radio {
+  min-width: 18px;
+  min-height: 18px;
+  border-radius: 999px;
+  border: 2px solid #5f6368;
+  background-color: transparent;
+}
+
+radio:checked {
+  background-color: @chromeos_accent;
+  border-color: @chromeos_accent;
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Fortschritt, Slider, Scrollbars                                     */
+/* ------------------------------------------------------------------ */
+progressbar trough {
+  min-height: 4px;
+  border-radius: 999px;
+  background-color: alpha(#1a73e8, 0.20);
+  border: none;
+}
+
+progressbar progress {
+  min-height: 4px;
+  border-radius: 999px;
+  background-color: @chromeos_accent;
+  border: none;
+}
+
+scale trough {
+  min-height: 4px;
+  border-radius: 999px;
+  background-color: alpha(#3c4043, 0.20);
+}
+
+scale highlight {
+  background-color: @chromeos_accent;
+  border-radius: 999px;
+}
+
+scale slider {
+  min-width: 18px;
+  min-height: 18px;
+  margin: -7px;
+  border-radius: 999px;
+  background-color: @chromeos_accent;
+  box-shadow: 0 1px 3px alpha(#3c4043, 0.35);
+}
+
+scrollbar {
+  background-color: transparent;
+  border: none;
+}
+
+scrollbar slider {
+  min-width: 6px;
+  min-height: 32px;
+  margin: 2px;
+  border-radius: 999px;
+  background-color: alpha(#3c4043, 0.32);
+  border: none;
+}
+
+scrollbar slider:hover {
+  background-color: alpha(#3c4043, 0.48);
+}
+
+scrollbar.overlay-indicator slider {
+  background-color: alpha(#3c4043, 0.40);
+}
+
+/* ------------------------------------------------------------------ */
+/* Tabs, Notebooks                                                     */
+/* ------------------------------------------------------------------ */
+notebook > header {
+  background-color: transparent;
+  border: none;
+}
+
+notebook > header tab {
+  min-height: 32px;
+  padding: 4px 16px;
+  margin: 4px 2px;
+  border-radius: 999px;
+  background-color: transparent;
+  color: #5f6368;
+  border: none;
+}
+
+notebook > header tab:hover {
+  background-color: alpha(#3c4043, 0.08);
+}
+
+notebook > header tab:checked {
+  background-color: alpha(#1a73e8, 0.14);
+  color: #174ea6;
+}
+
+notebook > stack {
+  background-color: @theme_base_color;
+  border-radius: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dialoge und Karten                                                  */
+/* ------------------------------------------------------------------ */
+dialog,
+messagedialog,
+window.dialog {
+  border-radius: 16px;
+}
+
+messagedialog .dialog-action-area button {
+  margin: 4px;
+  border-radius: 8px;
+}
+
+frame,
+.card,
+list.boxed-list {
+  border-radius: 12px;
+  border: 1px solid alpha(#3c4043, 0.10);
+  background-color: @theme_base_color;
+}
+
+/* Fenster im Hintergrund etwas zuruecknehmen (ChromeOS-Optik) */
+window:backdrop {
+  color: #5f6368;
+}
+
+headerbar:backdrop .title {
+  color: @wm_unfocused_title;
+}
+
+/* Scrollkanten wie ChromeOS: dezenter Fade statt harter Kante */
+scrolledwindow undershoot.top {
+  background: linear-gradient(to bottom, alpha(#3c4043, 0.10), transparent);
+}
+
+scrolledwindow undershoot.bottom {
+  background: linear-gradient(to top, alpha(#3c4043, 0.10), transparent);
+}

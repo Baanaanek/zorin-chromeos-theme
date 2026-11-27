@@ -1,0 +1,8 @@
+{
+  "uuid": "chromeos-shell@baanaanek.github.io",
+  "name": "ChromeOS Shell (Zorin)",
+  "description": "ChromeOS-Launcher, Shelf unten und Websuche. Ohne Assistant/KI und ohne Lens; die Websuche nutzt die Standardsuchmaschine des Standardbrowsers.",
+  "shell-version": ["45", "46", "47", "48"],
+  "url": "https://github.com/Baanaanek/zorin-chromeos-theme",
+  "version": 1
+}

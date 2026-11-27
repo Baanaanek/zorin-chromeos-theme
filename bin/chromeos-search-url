@@ -1,0 +1,290 @@
+#!/usr/bin/env python3
+# part of chromeos-theme (zorin-chromeos-theme)
+# ---------------------------------------------------------------------------
+# Ermittelt die Standardsuchmaschine des Standardbrowsers und baut daraus
+# eine Such-URL. Kein Google als Vorgabe: wenn sich die Suchmaschine nicht
+# eindeutig auslesen laesst, wird DuckDuckGo verwendet.
+#
+#   chromeos-search-url --open "suchbegriff"   Suche im Standardbrowser oeffnen
+#   chromeos-search-url --url "suchbegriff"    nur die URL ausgeben
+#   chromeos-search-url --engine-name          Name der erkannten Suchmaschine
+#   chromeos-search-url --json "suchbegriff"   {"engine": ..., "url": ...}
+#
+# Override (gewinnt immer):
+#   $CHROMEOS_SEARCH_URL   z.B. "https://duckduckgo.com/?q={query}"
+#   $XDG_CONFIG_HOME/chromeos-theme/config.json  {"search_url": "..."}
+# ---------------------------------------------------------------------------
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+FALLBACK = ("DuckDuckGo", "https://duckduckgo.com/?q={query}")
+
+# Name -> Such-URL. Nur fuer Faelle, in denen der Browser den Namen, aber
+# nicht die URL speichert.
+ENGINES = {
+    "duckduckgo": ("DuckDuckGo", "https://duckduckgo.com/?q={query}"),
+    "startpage": ("Startpage", "https://www.startpage.com/sp/search?query={query}"),
+    "ecosia": ("Ecosia", "https://www.ecosia.org/search?q={query}"),
+    "brave": ("Brave Search", "https://search.brave.com/search?q={query}"),
+    "bing": ("Bing", "https://www.bing.com/search?q={query}"),
+    "google": ("Google", "https://www.google.com/search?q={query}"),
+    "qwant": ("Qwant", "https://www.qwant.com/?q={query}"),
+    "yahoo": ("Yahoo", "https://search.yahoo.com/search?p={query}"),
+    "mojeek": ("Mojeek", "https://www.mojeek.com/search?q={query}"),
+    "searx": ("SearXNG", "https://searx.be/search?q={query}"),
+    "wikipedia": ("Wikipedia", "https://de.wikipedia.org/w/index.php?search={query}"),
+}
+
+# Desktop-Datei -> (Browser-Familie, Konfigurationsordner)
+FAMILIES = (
+    ("firefox", "firefox", None),
+    ("brave", "chromium", "BraveSoftware/Brave-Browser"),
+    ("chrome", "chromium", "google-chrome"),
+    ("chromium", "chromium", "chromium"),
+    ("edge", "chromium", "microsoft-edge"),
+    ("vivaldi", "chromium", "vivaldi"),
+    ("opera", "chromium", "opera"),
+    ("epiphany", "chromium", None),
+)
+
+
+def home(*parts):
+    return os.path.join(os.path.expanduser("~"), *parts)
+
+
+def config_home():
+    return os.environ.get("XDG_CONFIG_HOME") or home(".config")
+
+
+def engine_from_name(name):
+    lowered = (name or "").strip().lower()
+    for key, value in ENGINES.items():
+        if key in lowered:
+            return value
+    return None
+
+
+def http_get_default_browser():
+    for args in (
+        ["xdg-settings", "get", "default-web-browser"],
+        ["xdg-mime", "query", "default", "x-scheme-handler/https"],
+    ):
+        if not shutil.which(args[0]):
+            continue
+        try:
+            out = subprocess.run(args, capture_output=True, text=True, timeout=5).stdout
+        except Exception:
+            continue
+        out = out.strip()
+        if out and out not in ("none",):
+            return out
+    return ""
+
+
+def browser_family(desktop_id):
+    lowered = desktop_id.lower()
+    for needle, family, config_dir in FAMILIES:
+        if needle in lowered:
+            return family, config_dir
+    return None, None
+
+
+def override_url():
+    raw = os.environ.get("CHROMEOS_SEARCH_URL", "").strip()
+    path = os.path.join(config_home(), "chromeos-theme", "config.json")
+    if not raw and os.path.isfile(path):
+        try:
+            with open(path, encoding="utf-8") as handle:
+                raw = str(json.load(handle).get("search_url", "")).strip()
+        except Exception:
+            raw = ""
+    if raw and "{query}" in raw:
+        return ("Eigene Suche", raw)
+    return None
+
+
+def walk_for_search_url(node, depth=0):
+    """Sucht in Chromium-Preferences nach einer gespeicherten Such-URL."""
+    if depth > 6:
+        return None
+    if isinstance(node, dict):
+        url = node.get("url") or node.get("search_url")
+        if isinstance(url, str) and "{searchTerms}" in url:
+            return url
+        for value in node.values():
+            found = walk_for_search_url(value, depth + 1)
+            if found:
+                return found
+    elif isinstance(node, list):
+        for value in node:
+            found = walk_for_search_url(value, depth + 1)
+            if found:
+                return found
+    return None
+
+
+def chromium_profile_dirs(config_dir):
+    base = home(".config", config_dir) if config_dir else None
+    if not base or not os.path.isdir(base):
+        return []
+    found = []
+    for entry in sorted(os.listdir(base)):
+        prefs = os.path.join(base, entry, "Preferences")
+        if os.path.isfile(prefs):
+            found.append(prefs)
+    # "Default" zuerst pruefen
+    found.sort(key=lambda p: (os.path.basename(os.path.dirname(p)) != "Default", p))
+    return found
+
+
+def chromium_engine(config_dir, family_hint):
+    for prefs_path in chromium_profile_dirs(config_dir):
+        try:
+            with open(prefs_path, encoding="utf-8") as handle:
+                prefs = json.load(handle)
+        except Exception:
+            continue
+        provider = prefs.get("default_search_provider_data") or {}
+        data = provider.get("template_url_data") if isinstance(provider, dict) else None
+        if isinstance(data, dict):
+            url = data.get("url") or data.get("search_url")
+            if isinstance(url, str) and "{searchTerms}" in url:
+                name = data.get("short_name") or data.get("keyword") or "Suchmaschine"
+                return (name, url.replace("{searchTerms}", "{query}"))
+        url = walk_for_search_url(prefs)
+        if url:
+            return ("Suchmaschine", url.replace("{searchTerms}", "{query}"))
+    if family_hint == "brave":
+        return ENGINES["brave"]
+    return None
+
+
+def firefox_prefs_path():
+    base = home(".mozilla", "firefox")
+    ini = os.path.join(base, "profiles.ini")
+    if not os.path.isfile(ini):
+        return None
+    sections, current = {}, None
+    with open(ini, encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            line = line.strip()
+            if line.startswith("[") and line.endswith("]"):
+                current = line[1:-1]
+                sections[current] = {}
+            elif current and "=" in line:
+                key, _, value = line.partition("=")
+                sections[current][key.strip()] = value.strip()
+
+    candidates = [s for name, s in sections.items() if name.startswith("Profile")]
+    defaults = [s for s in candidates if s.get("Default") == "1"]
+    ordered = defaults + candidates
+    for section in ordered:
+        path = section.get("Path")
+        if not path:
+            continue
+        full = path if os.path.isabs(path) else os.path.join(base, path)
+        prefs = os.path.join(full, "prefs.js")
+        if os.path.isfile(prefs):
+            return prefs
+    return None
+
+
+def firefox_engine():
+    prefs = firefox_prefs_path()
+    if not prefs:
+        return None
+    name = None
+    pattern = re.compile(r'user_pref\("(browser\.search\.(?:defaultenginename|selectedEngine))'
+                         r'(?:\.[A-Z]{2})?",\s*"([^"]+)"\)')
+    try:
+        with open(prefs, encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                match = pattern.search(line)
+                if match:
+                    name = match.group(2)
+                    break
+    except Exception:
+        return None
+    return engine_from_name(name)
+
+
+def detect():
+    forced = override_url()
+    if forced:
+        return forced
+
+    desktop_id = http_get_default_browser()
+    family, config_dir = browser_family(desktop_id)
+
+    if family == "firefox" or (not desktop_id and os.path.isdir(home(".mozilla"))):
+        return firefox_engine() or FALLBACK
+
+    if family == "chromium":
+        result = chromium_engine(config_dir, desktop_id.lower())
+        if result:
+            return result
+        if "brave" in desktop_id.lower():
+            return ENGINES["brave"]
+        return FALLBACK
+
+    # Unbekannter/kein Browser: Firefox-Einstellungen probieren, sonst neutral.
+    return firefox_engine() or FALLBACK
+
+
+def build_url(template, query):
+    from urllib.parse import quote_plus
+    return template.replace("{query}", quote_plus(query))
+
+
+def open_in_browser(url):
+    for args in (["gio", "open", url], ["xdg-open", url]):
+        if shutil.which(args[0]):
+            try:
+                subprocess.Popen(args, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, start_new_session=True)
+                return True
+            except Exception:
+                continue
+    return False
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__ or "chromeos-search-url")
+        return 0
+    mode, rest = argv[0], argv[1:]
+    query = " ".join(rest).strip()
+
+    if mode == "--engine-name":
+        print(detect()[0])
+        return 0
+
+    if not query:
+        print("Kein Suchbegriff angegeben.", file=sys.stderr)
+        return 2
+
+    name, template = detect()
+    url = build_url(template, query)
+
+    if mode == "--json":
+        print(json.dumps({"engine": name, "url": url}, ensure_ascii=False))
+        return 0
+    if mode == "--url":
+        print(url)
+        return 0
+    if mode == "--open":
+        if not open_in_browser(url):
+            print("Kein Browser zum Oeffnen gefunden.", file=sys.stderr)
+            return 1
+        return 0
+
+    print(f"Unbekannter Modus: {mode}", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -1,0 +1,643 @@
+/* ChromeOS-Look fuer Zorin OS - GNOME Shell 45-48
+ * Wird von der Extension geladen (kein user-theme noetig).
+ * Inoffiziell, keine Verbindung zu Google.
+ */
+
+stage {
+  font-family: "Google Sans", "Roboto", "Cantarell", sans-serif;
+  font-size: 10.5pt;
+  color: #202124;
+}
+
+/* ------------------------------------------------------------------ */
+/* Obere Leiste - wird von der Extension ausgeblendet                  */
+/* ------------------------------------------------------------------ */
+#panel {
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+  height: 0;
+  padding: 0;
+  margin: 0;
+}
+
+#panel .panel-button {
+  color: #202124;
+  border-radius: 12px;
+  padding: 2px 8px;
+}
+
+#panel .panel-button:hover {
+  background-color: rgba(60, 64, 67, 0.08);
+}
+
+#panel .panel-button:active,
+#panel .panel-button:checked {
+  background-color: rgba(60, 64, 67, 0.14);
+}
+
+/* ------------------------------------------------------------------ */
+/* Popups, Menues                                                      */
+/* ------------------------------------------------------------------ */
+.popup-menu-boxpointer {
+  -arrow-border-radius: 20px;
+  -arrow-background-color: rgba(255, 255, 255, 0.99);
+  -arrow-border-width: 0;
+  -arrow-border-color: transparent;
+  -arrow-base: 0;
+  -arrow-rise: 0;
+  -arrow-box-shadow: none;
+}
+
+.popup-menu-content {
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.99);
+  box-shadow: 0 4px 8px 3px rgba(60, 64, 67, 0.16), 0 1px 3px rgba(60, 64, 67, 0.28);
+  color: #202124;
+  padding: 8px;
+}
+
+.popup-menu-item {
+  border-radius: 12px;
+  padding: 8px 12px;
+  spacing: 12px;
+  color: #202124;
+}
+
+.popup-menu-item:hover,
+.popup-menu-item:focus {
+  background-color: rgba(60, 64, 67, 0.08);
+}
+
+.popup-menu-item:active {
+  background-color: rgba(60, 64, 67, 0.14);
+}
+
+.popup-menu-item:checked {
+  background-color: rgba(26, 115, 232, 0.12);
+  color: #174ea6;
+}
+
+.popup-menu-item:insensitive {
+  color: #9aa0a6;
+}
+
+.popup-separator-menu-item .popup-separator-menu-item-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background-color: rgba(60, 64, 67, 0.12);
+}
+
+.popup-sub-menu {
+  background-color: rgba(241, 243, 244, 0.85);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.popup-menu-ornament {
+  width: 16px;
+  color: #5f6368;
+}
+
+.popup-menu-arrow {
+  color: #5f6368;
+}
+
+/* ------------------------------------------------------------------ */
+/* Schnelleinstellungen (ChromeOS-Tray-Optik)                          */
+/* ------------------------------------------------------------------ */
+.quick-settings {
+  padding: 10px;
+  spacing: 12px;
+  border-radius: 24px;
+}
+
+.quick-settings-grid {
+  spacing: 8px;
+}
+
+.quick-toggle {
+  min-height: 56px;
+  min-width: 148px;
+  border-radius: 20px;
+  background-color: rgba(60, 64, 67, 0.06);
+  color: #202124;
+  padding: 6px 12px;
+  spacing: 10px;
+}
+
+.quick-toggle:hover {
+  background-color: rgba(60, 64, 67, 0.12);
+}
+
+.quick-toggle:checked {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+.quick-toggle:checked:hover {
+  background-color: #1b66c9;
+}
+
+.quick-toggle:checked .quick-toggle-subtitle {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.quick-toggle-subtitle {
+  font-size: 8.5pt;
+  color: #5f6368;
+}
+
+.quick-toggle-arrow {
+  border-radius: 12px;
+  padding: 2px;
+  color: #5f6368;
+}
+
+.quick-toggle:checked .quick-toggle-arrow {
+  color: #ffffff;
+}
+
+.quick-menu-toggle .quick-toggle-arrow:ltr {
+  border-radius: 0 18px 18px 0;
+}
+
+.quick-menu-toggle .quick-toggle:ltr {
+  border-radius: 18px 0 0 18px;
+}
+
+.quick-toggle-menu {
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.99);
+  color: #202124;
+}
+
+.quick-toggle-menu .header .title {
+  font-weight: 500;
+  color: #202124;
+}
+
+.quick-toggle-menu .header .subtitle {
+  color: #5f6368;
+}
+
+.quick-slider {
+  spacing: 10px;
+  padding: 4px 4px;
+}
+
+.quick-settings-system-item .icon-button {
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 999px;
+  color: #202124;
+}
+
+.quick-settings-system-item .icon-button:hover {
+  background-color: rgba(60, 64, 67, 0.10);
+}
+
+.slider {
+  -barlevel-height: 4px;
+  -barlevel-background-color: rgba(26, 115, 232, 0.22);
+  -barlevel-active-background-color: #1a73e8;
+  -barlevel-overdrive-color: #d93025;
+  -barlevel-border-width: 0;
+  -slider-handle-radius: 8px;
+  -slider-handle-border-width: 0;
+  -slider-handle-border-color: transparent;
+  color: #1a73e8;
+}
+
+.icon-button {
+  border-radius: 999px;
+  color: #202124;
+}
+
+.toggle-switch {
+  background-image: none;
+  background-color: rgba(60, 64, 67, 0.24);
+  border-radius: 999px;
+  border: none;
+  width: 38px;
+  height: 22px;
+  color: transparent;
+}
+
+.toggle-switch:checked {
+  background-color: #1a73e8;
+  color: transparent;
+}
+
+.toggle-switch > StBin {
+  background-color: #ffffff;
+  border-radius: 999px;
+  border: none;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.4);
+}
+
+/* ------------------------------------------------------------------ */
+/* Kalender / Datumsmenue                                              */
+/* ------------------------------------------------------------------ */
+.datemenu-popover {
+  border-radius: 24px;
+}
+
+.datemenu-today-button {
+  border-radius: 16px;
+  padding: 8px 12px;
+}
+
+.datemenu-today-button:hover {
+  background-color: rgba(60, 64, 67, 0.08);
+}
+
+.calendar {
+  border-radius: 16px;
+  background-color: transparent;
+  padding: 8px;
+}
+
+.calendar-month-label {
+  padding: 6px 8px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.calendar-weekday,
+.calendar-day-heading {
+  color: #5f6368;
+  font-size: 8.5pt;
+}
+
+.calendar-day {
+  border-radius: 999px;
+  color: #202124;
+  padding: 2px;
+}
+
+.calendar-day:hover {
+  background-color: rgba(60, 64, 67, 0.10);
+}
+
+.calendar-day:selected {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+.calendar-day:selected:hover {
+  background-color: #1b66c9;
+}
+
+.calendar-today {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+.calendar-other-month-day {
+  color: #9aa0a6;
+}
+
+.events-button,
+.world-clocks-button,
+.weather-button {
+  border-radius: 16px;
+  background-color: rgba(60, 64, 67, 0.05);
+  color: #202124;
+  padding: 8px 12px;
+}
+
+.events-button:hover,
+.world-clocks-button:hover,
+.weather-button:hover {
+  background-color: rgba(60, 64, 67, 0.10);
+}
+
+/* ------------------------------------------------------------------ */
+/* Benachrichtigungen                                                  */
+/* ------------------------------------------------------------------ */
+.notification-banner,
+.message {
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.99);
+  color: #202124;
+  box-shadow: 0 4px 8px 3px rgba(60, 64, 67, 0.16);
+  padding: 12px;
+  spacing: 8px;
+}
+
+.notification-banner:hover,
+.message:hover {
+  background-color: #f8f9fa;
+}
+
+.notification-banner .notification-button,
+.message .message-button {
+  border-radius: 999px;
+  padding: 4px 12px;
+  background-color: rgba(26, 115, 232, 0.12);
+  color: #174ea6;
+}
+
+.message-title {
+  font-weight: 600;
+  color: #202124;
+}
+
+.message-body,
+.message-content {
+  color: #5f6368;
+}
+
+.message-list-controls {
+  padding: 4px 8px;
+  spacing: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/* App-Raster / Uebersicht                                             */
+/* ------------------------------------------------------------------ */
+.app-grid {
+  padding: 8px;
+}
+
+.app-grid .app-well-app .overview-icon,
+.app-well-app .overview-icon {
+  border-radius: 16px;
+  padding: 8px;
+}
+
+.app-well-app:hover .overview-icon,
+.app-well-app:focus .overview-icon {
+  background-color: rgba(60, 64, 67, 0.10);
+}
+
+.app-well-app:active .overview-icon,
+.app-well-app:selected .overview-icon {
+  background-color: rgba(60, 64, 67, 0.16);
+}
+
+.app-well-app-running-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background-color: #1a73e8;
+  margin-bottom: 2px;
+}
+
+.app-folder .overview-icon,
+.app-folder-icon {
+  border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+.app-folder-dialog {
+  border-radius: 24px;
+  background-color: rgba(248, 249, 250, 0.99);
+  box-shadow: 0 8px 24px 3px rgba(60, 64, 67, 0.22);
+  color: #202124;
+}
+
+.page-indicator {
+  padding: 6px;
+}
+
+.page-indicator .page-indicator-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background-color: rgba(60, 64, 67, 0.28);
+}
+
+.page-indicator:hover .page-indicator-icon {
+  background-color: rgba(60, 64, 67, 0.46);
+}
+
+.page-indicator:checked .page-indicator-icon,
+.page-indicator:active .page-indicator-icon {
+  background-color: #1a73e8;
+}
+
+.search-entry {
+  width: 320px;
+  border-radius: 999px;
+  padding: 8px 16px;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #202124;
+  border: 1px solid rgba(60, 64, 67, 0.12);
+}
+
+.search-entry:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 1px 6px rgba(26, 115, 232, 0.35);
+}
+
+.search-entry .search-entry-icon {
+  color: #5f6368;
+  padding: 0 4px;
+}
+
+.search-statustext,
+.no-frequent-applications-label {
+  color: #5f6368;
+}
+
+.search-section-content {
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 8px;
+}
+
+.list-search-result {
+  border-radius: 12px;
+  padding: 6px 8px;
+}
+
+.list-search-result:hover,
+.list-search-result:focus {
+  background-color: rgba(60, 64, 67, 0.08);
+}
+
+.overview-controls {
+  padding-bottom: 32px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dash (GNOME-Dock, falls aktiv)                                      */
+/* ------------------------------------------------------------------ */
+#dash {
+  padding: 8px;
+  background-color: rgba(255, 255, 255, 0.88);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 12px rgba(60, 64, 67, 0.15);
+}
+
+.dash-background {
+  background-color: transparent;
+  border-radius: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+.dash-item-container .app-well-app .overview-icon,
+.dash-item-container .show-apps .overview-icon {
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.dash-label {
+  border-radius: 8px;
+  padding: 4px 8px;
+  background-color: #3c4043;
+  color: #ffffff;
+  font-size: 9pt;
+}
+
+/* ------------------------------------------------------------------ */
+/* Fensterliste, Arbeitsflaechen                                       */
+/* ------------------------------------------------------------------ */
+.window-caption {
+  border-radius: 999px;
+  padding: 4px 12px;
+  background-color: rgba(32, 33, 36, 0.85);
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.window-close {
+  border-radius: 999px;
+  background-color: #d93025;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  padding: 6px;
+}
+
+.window-close:hover {
+  background-color: #b3261e;
+}
+
+.workspace-thumbnail-indicator {
+  border-radius: 12px;
+  border: 2px solid #1a73e8;
+  background-color: rgba(26, 115, 232, 0.10);
+}
+
+.workspace-thumbnails {
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.55);
+}
+
+.tile-preview {
+  background-color: rgba(26, 115, 232, 0.24);
+  border: 1px solid #1a73e8;
+  border-radius: 12px;
+}
+
+.tile-preview.snap {
+  background-color: rgba(26, 115, 232, 0.36);
+}
+
+/* ------------------------------------------------------------------ */
+/* OSD (Lautstaerke, Helligkeit)                                       */
+/* ------------------------------------------------------------------ */
+.osd-window {
+  border-radius: 20px;
+  background-color: rgba(32, 33, 36, 0.92);
+  color: #ffffff;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.osd-window .level {
+  background-color: rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  height: 6px;
+}
+
+.osd-window .level-bar {
+  background-color: #8ab4f8;
+  border-radius: 999px;
+}
+
+.osd-monitor-label {
+  border-radius: 12px;
+  background-color: rgba(32, 33, 36, 0.9);
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dialoge                                                            */
+/* ------------------------------------------------------------------ */
+.modal-dialog {
+  border-radius: 24px;
+  background-color: rgba(248, 249, 250, 0.99);
+  color: #202124;
+  box-shadow: 0 8px 24px 3px rgba(60, 64, 67, 0.25);
+  padding: 16px;
+}
+
+.modal-dialog .modal-dialog-linked-button {
+  border-radius: 999px;
+  padding: 8px 20px;
+  margin: 4px 6px;
+  background-color: transparent;
+  color: #1a73e8;
+  font-weight: 600;
+  border: none;
+}
+
+.modal-dialog .modal-dialog-linked-button:hover {
+  background-color: rgba(26, 115, 232, 0.10);
+}
+
+.modal-dialog .modal-dialog-linked-button:last-child {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+.modal-dialog .modal-dialog-linked-button:last-child:hover {
+  background-color: #1b66c9;
+}
+
+.dialog-list {
+  spacing: 12px;
+}
+
+.polkit-dialog-user-layout .username-label {
+  font-size: 12pt;
+  font-weight: 600;
+}
+
+#LookingGlassDialog {
+  border-radius: 20px;
+  background-color: rgba(248, 249, 250, 0.99);
+  color: #202124;
+}
+
+/* ------------------------------------------------------------------ */
+/* Screenshot-/Bildschirmtastatur-Reste                                */
+/* ------------------------------------------------------------------ */
+.keyboard-key {
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #202124;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+  border: 1px solid rgba(60, 64, 67, 0.12);
+}
+
+.keyboard-key:active {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
+/* Barrierefreiheits-/Hot-Corner-Elemente                               */
+/* ------------------------------------------------------------------ */
+.ripple-box {
+  width: 52px;
+  height: 52px;
+  background-image: none;
+  background-color: rgba(26, 115, 232, 0.25);
+  border: 2px solid #1a73e8;
+  border-radius: 999px;
+}
