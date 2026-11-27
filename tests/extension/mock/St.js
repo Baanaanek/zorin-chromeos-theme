@@ -249,4 +249,5 @@ export default {
     Theme,
     ThemeContext,
     PolicyType: {NEVER: 'never', AUTOMATIC: 'automatic', ALWAYS: 'always'},
+    Side: {TOP: 'top', BOTTOM: 'bottom', LEFT: 'left', RIGHT: 'right'},
 };

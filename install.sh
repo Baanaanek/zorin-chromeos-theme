@@ -28,6 +28,12 @@ STATE_DIR="$STATE_HOME/chromeos-theme"
 BACKUP_FILE="$STATE_DIR/settings.tsv"
 DISABLED_FILE="$STATE_DIR/disabled-extensions.txt"
 WALLPAPER="$WALL_DIR/chromeos-wallpaper.jpg"
+CURSOR_NAME="$THEME_NAME"
+CURSOR_SRC="$SCRIPT_DIR/cursor/$CURSOR_NAME"
+ICON_DIR="$DATA_HOME/icons/$CURSOR_NAME"
+GTK4_DIR="$CONFIG_HOME/gtk-4.0"
+GTK4_FILE="$GTK4_DIR/gtk.css"
+GTK4_BACKUP="$STATE_DIR/gtk-4.0-gtk.css.before"
 
 DRY_RUN=0
 ACTIVATE_ONLY=0
@@ -87,6 +93,10 @@ run() {
     || die "Theme-Dateien fehlen. Bitte das komplette Repo verwenden (nicht nur install.sh kopieren)."
 [ -d "$SCRIPT_DIR/extension/$EXT_UUID" ] \
     || die "Extension-Ordner fehlt: extension/$EXT_UUID"
+[ -f "$SCRIPT_DIR/theme/$THEME_NAME/gtk-4.0/gtk.css" ] \
+    || die "GTK-4-Farbdatei fehlt: theme/$THEME_NAME/gtk-4.0/gtk.css"
+[ -d "$CURSOR_SRC/cursors" ] \
+    || die "Cursor-Satz fehlt: cursor/$CURSOR_NAME (mit tools/build-cursors.mjs erzeugen)"
 
 HAVE_GSETTINGS=0
 if command -v gsettings >/dev/null 2>&1; then
@@ -97,6 +107,9 @@ fi
 
 HAVE_GNOME_EXT=0
 command -v gnome-extensions >/dev/null 2>&1 && HAVE_GNOME_EXT=1
+
+HAVE_DCONF=0
+command -v dconf >/dev/null 2>&1 && HAVE_DCONF=1
 
 SHELL_MAJOR=""
 if command -v gnome-shell >/dev/null 2>&1; then
@@ -119,16 +132,35 @@ if [ "$DRY_RUN" -eq 0 ]; then
 fi
 
 # --- Helfer ----------------------------------------------------------------
+# dconf-Pfad eines Schemas: org.gnome.desktop.interface -> /org/gnome/desktop/interface/
+dconf_path() {
+    printf '/%s/' "${1//./\/}"
+}
+
 backup_key() {
-    local schema=$1 key=$2 value
+    local schema=$1 key=$2 value state
     [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
     [ "$DRY_RUN" -eq 0 ] || return 0
     if awk -F'\t' -v s="$schema" -v k="$key" '$1==s && $2==k {f=1} END {exit !f}' \
         "$BACKUP_FILE" 2>/dev/null; then
         return 0
     fi
-    value=$(gsettings get "$schema" "$key" 2>/dev/null) || return 0
-    printf '%s\t%s\t%s\n' "$schema" "$key" "$value" >> "$BACKUP_FILE"
+    value=$(gsettings get "$schema" "$key" 2>/dev/null) || value=""
+    state=$value
+    if [ -z "$value" ]; then
+        # Schluessel existiert in dieser GNOME-Version nicht.
+        state='__UNSET__'
+    elif [ "$HAVE_DCONF" -eq 1 ] \
+        && [ -z "$(dconf read "$(dconf_path "$schema")$key" 2>/dev/null)" ]; then
+        # Nie explizit gesetzt: uninstall.sh setzt den Schluessel per reset zurueck.
+        state='__UNSET__'
+    fi
+    printf '%s\t%s\t%s\n' "$schema" "$key" "$state" >> "$BACKUP_FILE"
+}
+
+have_schema() {
+    [ "$HAVE_GSETTINGS" -eq 1 ] || return 1
+    gsettings list-schemas 2>/dev/null | grep -qxF -- "$1"
 }
 
 set_key() {
@@ -214,6 +246,29 @@ install_files() {
     info "Hintergrundbild nach $WALLPAPER"
     run mkdir -p "$WALL_DIR"
     run cp -a "$SCRIPT_DIR/assets/wallpapers/chromeos-blue.jpg" "$WALLPAPER"
+
+    info "Mauszeiger nach $ICON_DIR"
+    if [ -d "$ICON_DIR" ]; then
+        if [ -f "$ICON_DIR/.chromeos-theme" ]; then
+            run rm -rf "$ICON_DIR"
+        else
+            warn "Vorhandener Mauszeiger-Satz ohne Markierung - wird gesichert: $ICON_DIR.bak"
+            run mv "$ICON_DIR" "$ICON_DIR.bak"
+        fi
+    fi
+    run mkdir -p "$ICON_DIR"
+    run cp -a "$SCRIPT_DIR/cursor/$CURSOR_NAME/." "$ICON_DIR/"
+    if [ "$DRY_RUN" -eq 0 ]; then
+        printf 'chromeos-theme\n' > "$ICON_DIR/.chromeos-theme"
+    fi
+
+    info "GTK-4-Farben nach $GTK4_FILE (libadwaita ignoriert gtk-theme)"
+    run mkdir -p "$GTK4_DIR"
+    if [ -f "$GTK4_FILE" ] && ! grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null; then
+        info "Vorhandene GTK-4-Datei wird gesichert"
+        run cp -a "$GTK4_FILE" "$GTK4_BACKUP"
+    fi
+    run cp -a "$SCRIPT_DIR/theme/$THEME_NAME/gtk-4.0/gtk.css" "$GTK4_FILE"
 }
 
 # --- 2. Einstellungen ------------------------------------------------------
@@ -230,12 +285,31 @@ apply_settings() {
     set_key org.gnome.desktop.interface clock-show-weekday "true"
     set_key org.gnome.desktop.interface clock-show-seconds "false"
 
+    # ChromeOS-Schrift: Roboto ist frei verfuegbar. Fehlt sie, greift fontconfig
+    # auf eine metrisch aehnliche Schrift zurueck; die Keys werden trotzdem gesetzt.
     local font_match=""
     command -v fc-match >/dev/null 2>&1 && font_match=$(fc-match "Roboto" 2>/dev/null)
-    if printf '%s' "$font_match" | grep -qi roboto; then
-        set_key org.gnome.desktop.interface font-name "Roboto 11"
+    if ! printf '%s' "$font_match" | grep -qi roboto; then
+        warn "Roboto nicht installiert - der Look nutzt die Fallback-Schrift (optional: sudo apt install fonts-roboto)."
+    fi
+    set_key org.gnome.desktop.interface font-name "Roboto 11"
+    set_key org.gnome.desktop.wm.preferences titlebar-font "Roboto 11"
+    set_key org.gnome.desktop.interface document-font-name "Roboto 11"
+    set_key org.gnome.desktop.interface monospace-font-name "Roboto Mono 10"
+
+    set_key org.gnome.desktop.interface cursor-theme "$CURSOR_NAME"
+    set_key org.gnome.desktop.interface cursor-size "24"
+
+    # Der GNOME-Hot-Corner (oben links) existiert in ChromeOS nicht.
+    set_key org.gnome.desktop.interface enable-hot-corners "false"
+
+    # ChromeOS hat keinen Desktop: DING zeigt keine Symbole mehr.
+    if have_schema org.gnome.shell.extensions.ding; then
+        set_key org.gnome.shell.extensions.ding show-home "false"
+        set_key org.gnome.shell.extensions.ding show-trash "false"
+        set_key org.gnome.shell.extensions.ding show-other-volumes "false"
     else
-        warn "Roboto nicht installiert - Systemschrift bleibt (optional: sudo apt install fonts-roboto)."
+        skip "Desktop-Icons-Erweiterung (DING) nicht gefunden - Desktop-Symbole bleiben unveraendert."
     fi
 
     set_key org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
@@ -349,6 +423,7 @@ Danach:
   * runder Knopf links unten oder Supertaste  -> ChromeOS-Launcher
   * Tippen im Launcher                        -> Apps filtern, Enter oeffnet
   * Uhr / Status rechts unten                 -> Kalender / Schnelleinstellungen
+  * Rechtsklick auf ein Shelf- oder Launcher-Icon -> Anheften, Schliessen, App-Info
   * Websuche nutzt die Suchmaschine des Standardbrowsers
     (Override: $CONFIG_HOME/chromeos-theme/config.json)
 

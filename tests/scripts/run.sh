@@ -80,8 +80,11 @@ HELPER="$TEST_HOME/.local/bin/chromeos-search-url"
 WALLPAPER="$DATA/backgrounds/chromeos-wallpaper.jpg"
 STATE_DIR="$TEST_HOME/.local/state/chromeos-theme"
 BACKUP_FILE="$STATE_DIR/settings.tsv"
+ICON_DIR="$DATA/icons/$THEME_NAME"
+GTK4_FILE="$TEST_HOME/.config/gtk-4.0/gtk.css"
 
-mkdir -p "$DATA/applications" "$STUB_STATE"
+mkdir -p "$DATA/applications" "$STUB_STATE" "$TEST_HOME/.config/gtk-4.0"
+printf '/* eigene Anpassung */\n' > "$GTK4_FILE"
 for app in firefox.desktop org.gnome.Nautilus.desktop org.gnome.Settings.desktop \
            org.gnome.TextEditor.desktop org.gnome.Terminal.desktop; do
     : > "$DATA/applications/$app"
@@ -96,6 +99,10 @@ printf '%s\t%s\t%s\n' \
     'org.gnome.desktop.interface' 'clock-show-weekday' 'false' \
     'org.gnome.desktop.interface' 'clock-show-seconds' 'false' \
     'org.gnome.desktop.interface' 'font-name' "'Inter 10'" \
+    'org.gnome.desktop.interface' 'enable-hot-corners' 'true' \
+    'org.gnome.shell.extensions.ding' 'show-home' 'true' \
+    'org.gnome.shell.extensions.ding' 'show-trash' 'true' \
+    'org.gnome.shell.extensions.ding' 'show-other-volumes' 'true' \
     'org.gnome.desktop.wm.preferences' 'button-layout' "'appmenu:close'" \
     'org.gnome.desktop.background' 'picture-uri' "'file:///usr/share/backgrounds/zorin.jpg'" \
     'org.gnome.desktop.background' 'picture-uri-dark' "'file:///usr/share/backgrounds/zorin.jpg'" \
@@ -163,6 +170,46 @@ background_ok() {
     [ "$(gget org.gnome.desktop.background picture-options)" = 'zoom' ]
 }
 
+fonts_ok() {
+    [ "$(gget org.gnome.desktop.wm.preferences titlebar-font)" = 'Roboto 11' ] &&
+        [ "$(gget org.gnome.desktop.interface document-font-name)" = 'Roboto 11' ] &&
+        [ "$(gget org.gnome.desktop.interface monospace-font-name)" = 'Roboto Mono 10' ]
+}
+
+ding_off() {
+    [ "$(gget org.gnome.shell.extensions.ding show-home)" = 'false' ] &&
+        [ "$(gget org.gnome.shell.extensions.ding show-trash)" = 'false' ] &&
+        [ "$(gget org.gnome.shell.extensions.ding show-other-volumes)" = 'false' ]
+}
+
+cursor_ok() {
+    [ -s "$ICON_DIR/cursors/left_ptr" ] &&
+        [ -s "$ICON_DIR/cursors/hand2" ] &&
+        [ -s "$ICON_DIR/cursors/wait" ] &&
+        [ -f "$ICON_DIR/.chromeos-theme" ]
+}
+
+gtk4_ours() {
+    grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null &&
+        grep -q 'accent_bg_color #1a73e8' "$GTK4_FILE" 2>/dev/null
+}
+
+no_extra_keys() {
+    local extra
+    extra=$(comm -13 \
+        <(awk -F'\t' '!($1 == "org.gnome.shell" && $2 == "enabled-extensions")' \
+            "$TMP/seed.tsv" | sort) \
+        <(awk -F'\t' '!($1 == "org.gnome.shell" && $2 == "enabled-extensions")' \
+            "$STUB_STATE/gsettings.tsv" | sort))
+    [ -z "$extra" ]
+}
+
+unset_after_uninstall() {
+    [ -z "$(gget org.gnome.desktop.interface cursor-theme)" ] &&
+        [ -z "$(gget org.gnome.desktop.interface cursor-size)" ] &&
+        [ -z "$(gget org.gnome.desktop.wm.preferences titlebar-font)" ]
+}
+
 favorites_ok() {
     local value
     value=$(gget org.gnome.shell favorite-apps)
@@ -203,6 +250,8 @@ check 'Dry-Run legt keine Extension an' missing "$EXT_DIR"
 check 'Dry-Run legt keinen Helfer an' missing "$HELPER"
 check 'Dry-Run legt kein Hintergrundbild an' missing "$WALLPAPER"
 check 'Dry-Run legt keinen Zustandsordner an' missing "$STATE_DIR"
+check 'Dry-Run legt keinen Cursor-Satz an' missing "$ICON_DIR"
+check 'Dry-Run laesst die GTK-4-Datei des Nutzers stehen' has_text "$GTK4_FILE" 'eigene Anpassung'
 check 'Dry-Run schreibt keine Einstellungen' missing "$STUB_STATE/gsettings-set.log"
 check 'Dry-Run deaktiviert keine Zorin-Leiste' missing "$STUB_STATE/ext-disable.log"
 check 'Dry-Run meldet "Probelauf beendet"' has_text "$OUT" 'Probelauf beendet'
@@ -219,15 +268,15 @@ check 'unbekannte Option endet mit 2' eq "$?" 2
 run_stub install.sh >"$OUT" 2>"$ERR"
 check 'Installation endet mit 0' eq "$?" 0
 check 'Theme-Ordner existiert' exists "$THEME_DIR"
-check 'GTK- und Shell-Theme liegen bereit' \
-    bash -c '[ -f "$1/gtk-3.0/gtk.css" ] && [ -f "$1/gnome-shell/gnome-shell.css" ]' \
+check 'GTK-3-, GTK-4- und Shell-Theme liegen bereit' \
+    bash -c '[ -f "$1/gtk-3.0/gtk.css" ] && [ -f "$1/gtk-4.0/gtk.css" ] && [ -f "$1/gnome-shell/gnome-shell.css" ]' \
     _ "$THEME_DIR"
 check 'Theme ist markiert' has_text "$THEME_DIR/.chromeos-theme" 'chromeos-theme'
 check 'Extension mit allen Dateien installiert' extension_files_ok
 check 'Suchhelfer installiert und ausfuehrbar' bash -c '[ -x "$1" ]' _ "$HELPER"
 check 'Hintergrundbild installiert' exists "$WALLPAPER"
-check 'Sicherung enthaelt zwoelf Einstellungen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 12 ]' _ "$BACKUP_FILE"
+check 'Sicherung enthaelt 21 Einstellungen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 21 ]' _ "$BACKUP_FILE"
 check 'gtk-theme ist ChromeOS' gset org.gnome.desktop.interface gtk-theme 'ChromeOS'
 check 'color-scheme ist default' gset org.gnome.desktop.interface color-scheme 'default'
 check 'accent-color ist blue' gset org.gnome.desktop.interface accent-color 'blue'
@@ -236,6 +285,17 @@ check 'Fensterknoepfe rechts' \
     gset org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
 check 'Schrift ist Roboto 11' gset org.gnome.desktop.interface font-name 'Roboto 11'
 check 'Hintergrund ist gesetzt' background_ok
+check 'Mauszeiger-Satz installiert und markiert' cursor_ok
+check 'Cursor-Theme erbt Adwaita' has_text "$ICON_DIR/index.theme" 'Inherits=Adwaita'
+check 'cursor-theme ist ChromeOS' gset org.gnome.desktop.interface cursor-theme 'ChromeOS'
+check 'cursor-size ist 24' gset org.gnome.desktop.interface cursor-size '24'
+check 'Hot Corner ist aus' gset org.gnome.desktop.interface enable-hot-corners 'false'
+check 'Fenster-, Dokument- und Monospace-Schrift gesetzt' fonts_ok
+check 'DING zeigt keine Desktop-Symbole' ding_off
+check 'GTK-4-Farbdatei installiert (libadwaita)' gtk4_ours
+check 'GTK-4-Datei deckt hell und dunkel ab' bash -c '
+    grep -q "window_bg_color #f8f9fa" "$1" &&
+    grep -q "prefers-color-scheme: dark" "$1"' _ "$GTK4_FILE"
 check 'Shelf-Favoriten enthalten Browser und Dateien' favorites_ok
 check 'Zorin-Leisten wurden deaktiviert' bash -c '
     grep -qxF "zorin-dash@zorinos.com" "$1" && grep -qxF "zorin-menu@zorinos.com" "$1"' \
@@ -246,8 +306,8 @@ check 'Installation meldet "Fertig."' has_text "$OUT" 'Fertig.'
 # --- 4. Zweiter Lauf (idempotent) -----------------------------------------
 run_stub install.sh >"$OUT" 2>"$ERR"
 check 'zweiter Lauf endet mit 0' eq "$?" 0
-check 'Sicherung bleibt bei zwoelf Eintraegen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 12 ]' _ "$BACKUP_FILE"
+check 'Sicherung bleibt bei 21 Eintraegen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 21 ]' _ "$BACKUP_FILE"
 check 'kein Theme-Backup und keine Dopplung' \
     bash -c '[ -d "$1" ] && [ ! -e "$1.bak" ]' _ "$THEME_DIR"
 
@@ -262,6 +322,9 @@ run_stub uninstall.sh --dry-run >"$OUT" 2>"$ERR"
 check 'Uninstall-Dry-Run endet mit 0' eq "$?" 0
 check 'Uninstall-Dry-Run entfernt nichts' \
     bash -c '[ -d "$1" ] && [ -d "$2" ] && [ -x "$3" ]' _ "$THEME_DIR" "$EXT_DIR" "$HELPER"
+check 'Uninstall-Dry-Run laesst Cursor und GTK-4 stehen' \
+    bash -c '[ -s "$1/cursors/left_ptr" ] && grep -q chromeos-theme "$2"' \
+    _ "$ICON_DIR" "$GTK4_FILE"
 
 # --- 7. Echte Deinstallation ----------------------------------------------
 run_stub uninstall.sh >"$OUT" 2>"$ERR"
@@ -271,7 +334,11 @@ check 'Extension, Helfer und Hintergrund entfernt' \
     bash -c '[ ! -e "$1" ] && [ ! -e "$2" ] && [ ! -e "$3" ]' \
     _ "$EXT_DIR" "$HELPER" "$WALLPAPER"
 check 'Zustandsordner entfernt' missing "$STATE_DIR"
-check 'alle zwoelf Einstellungen exakt wiederhergestellt' settings_restored
+check 'Mauszeiger-Satz entfernt' missing "$ICON_DIR"
+check 'alle 21 Einstellungen exakt wiederhergestellt' settings_restored
+check 'vorher nie gesetzte Keys bleiben ungesetzt' unset_after_uninstall
+check 'keine zusaetzlichen Keys in der Datenbank' no_extra_keys
+check 'GTK-4-Datei des Nutzers unveraendert zurueck' has_text "$GTK4_FILE" 'eigene Anpassung'
 check 'Zorin-Leisten wieder aktiv, UUID aus der Liste' bash -c '
     grep -qxF "zorin-dash@zorinos.com" "$1" &&
     grep -qxF "zorin-menu@zorinos.com" "$1" &&
@@ -284,11 +351,15 @@ check 'Installation ohne GNOME endet mit 0' eq "$?" 0
 check 'Dateien werden auch ohne GNOME installiert' \
     bash -c '[ -f "$1/gnome-shell/gnome-shell.css" ] && [ -d "$2" ] && [ -x "$3" ]' \
     _ "$THEME_DIR" "$EXT_DIR" "$HELPER"
+check 'Cursor und GTK-4 werden auch ohne GNOME installiert' \
+    bash -c '[ -s "$1/cursors/left_ptr" ] && grep -q chromeos-theme "$2"' \
+    _ "$ICON_DIR" "$GTK4_FILE"
 run_bare uninstall.sh >"$OUT" 2>"$ERR"
 check 'Deinstallation ohne GNOME endet mit 0' eq "$?" 0
 check 'ohne GNOME wird trotzdem vollstaendig aufgeraeumt' \
     bash -c '[ ! -e "$1" ] && [ ! -e "$2" ] && [ ! -e "$3" ]' \
     _ "$THEME_DIR" "$EXT_DIR" "$HELPER"
+check 'ohne GNOME kommt auch die GTK-4-Datei zurueck' has_text "$GTK4_FILE" 'eigene Anpassung'
 
 # --- Ergebnis --------------------------------------------------------------
 printf '\n%s/%s Pruefungen bestanden\n' "$PASSED" "$TOTAL"

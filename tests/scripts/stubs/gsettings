@@ -21,6 +21,15 @@ case "${1:-}" in
             END {if (!found) print s, k, v}
         ' "$DB" > "$DB.new" && mv "$DB.new" "$DB"
         ;;
+    list-schemas)
+        awk -F'\t' '!seen[$1]++ {print $1}' "$DB"
+        ;;
+    reset)
+        schema="${2:-}"; key="${3:-}"
+        printf '%s\t%s\n' "$schema" "$key" >> "$STATE/gsettings-reset.log"
+        awk -F'\t' -v s="$schema" -v k="$key" '!($1==s && $2==k)' \
+            "$DB" > "$DB.new" && mv "$DB.new" "$DB"
+        ;;
     *)
         exit 2
         ;;

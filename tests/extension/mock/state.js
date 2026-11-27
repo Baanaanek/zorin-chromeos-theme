@@ -49,4 +49,6 @@ export const state = {
     panelShows: 0,
     themeLoads: [],
     themeUnloads: [],
+    appInfoUris: [],
+    closedWindows: [],
 };

@@ -7,6 +7,8 @@
 | Shell-Theme | `theme/ChromeOS/gnome-shell/gnome-shell.css` | Panel, Popups, Schnelleinstellungen, App-Raster, OSD, Benachrichtigungen |
 | Launcher + Shelf | `extension/chromeos-shell@baanaanek.github.io/` | ChromeOS-Launcher (Suchfeld + App-Raster), Shelf unten, Tray rechts, Websuche |
 | GTK-Theme | `theme/ChromeOS/gtk-3.0/` | Fenster, Titelleisten, Buttons, Eingabefelder, Menues fuer GTK-3-Apps |
+| GTK-4/libadwaita | `theme/ChromeOS/gtk-4.0/gtk.css` | Farbtokens und Radien fuer GNOME-46-Apps (Dateien, Einstellungen, Texteditor, Konsole); wird als `~/.config/gtk-4.0/gtk.css` installiert |
+| Mauszeiger | `cursor/ChromeOS/` | eigener Xcursor-Satz (52 Namen, 24/48 px), erzeugt aus `tools/build-cursors.mjs` |
 | Hintergruende | `assets/wallpapers/` | Drei eigene Motive (Blau-Verlauf, Iris, Bergsee) |
 
 Das Shell-Theme wird **von der Extension selbst** geladen
@@ -50,6 +52,9 @@ Schrift          "Google Sans", "Roboto", "Cantarell", sans-serif
   Standardbrowser.
 - Klick auf ein angeheftetes App-Icon startet die App bzw. holt ein
   vorhandenes Fenster nach vorne; Mittelklick oeffnet ein neues Fenster.
+- Rechtsklick auf ein Shelf- oder Launcher-Icon oeffnet ein Kontextmenue:
+  An die Shelf anheften bzw. von ihr entfernen, Fenster schliessen (nur bei
+  laufenden Fenstern) und App-Info (oeffnet `appstream://<app-id>`).
 - Uhr und Status-Icons rechts in der Shelf sind die echten
   GNOME-Panel-Buttons: Klick oeffnet Kalender bzw. Schnelleinstellungen,
   die dann direkt ueber der Shelf erscheinen.
@@ -60,5 +65,7 @@ Schrift          "Google Sans", "Roboto", "Cantarell", sans-serif
   (Kachelraster bleibt GNOME), nur Optik und Position werden angeglichen.
 - GNOME-Overview/Arbeitsflaechen bleiben vorhanden (Ctrl+Alt+Up/Down), weil
   Zorin sie fuer Fensterverwaltung und Arbeitsbereiche braucht.
-- libadwaita-Apps ignorieren GTK-Themes weitgehend; dort wirkt nur der
-  gesetzte Akzent.
+- libadwaita-Apps uebernehmen ueber die Nutzer-CSS Farben, Akzent, Radien
+  und Schrift, aber nicht ihr Layout (Sidebars, Karten, Headerbar-Aufbau).
+- Icon-Set, Google Sans und der Material-Mauszeiger sind nicht frei
+  lizenzierbar; GDM, Plymouth und Systemklaenge braeuchten sudo.

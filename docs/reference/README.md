@@ -11,6 +11,7 @@ Design-Referenz mitgefuehrt, nicht als Teil des Themes installiert.
 | `03-quick-settings-dark.webp` | Schnelleinstellungen als dunkles, stark gerundetes Panel mit Kacheln (WLAN, Bluetooth, Nachtlicht), Lautstaerke-Slider, Fusszeile mit Datum/Akku. |
 | `04-quick-settings-light.webp` | Wie oben, helle Variante: 3x2-Kachelraster, runde Icons, Datum links unten. |
 | `05-shelf-tray.webp` | Shelf ueber volle Breite: Launcher links, angeheftete Apps, Geraete-Icons, dann Tray mit Datum/Uhrzeit/Akku; rechts ein Panel mit "Pinned files". |
+| `06-cursors.png` | Kein ChromeOS-Screenshot, sondern die Vorschau des mitgelieferten eigenen Mauszeiger-Satzes (hell/dunkel), erzeugt von `tools/build-cursors.mjs`. |
 
 ## Was daraus ins Theme uebersetzt wurde
 

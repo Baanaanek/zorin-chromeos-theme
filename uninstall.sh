@@ -18,8 +18,12 @@ EXT_DIR="$DATA_HOME/gnome-shell/extensions/$EXT_UUID"
 HELPER="$HOME/.local/bin/chromeos-search-url"
 WALL_DIR="$DATA_HOME/backgrounds"
 WALLPAPER="$WALL_DIR/chromeos-wallpaper.jpg"
+ICON_DIR="$DATA_HOME/icons/$THEME_NAME"
+GTK4_DIR="$CONFIG_HOME/gtk-4.0"
+GTK4_FILE="$GTK4_DIR/gtk.css"
 STATE_DIR="$STATE_HOME/chromeos-theme"
 BACKUP_FILE="$STATE_DIR/settings.tsv"
+GTK4_BACKUP="$STATE_DIR/gtk-4.0-gtk.css.before"
 DISABLED_FILE="$STATE_DIR/disabled-extensions.txt"
 CONFIG_DIR="$CONFIG_HOME/chromeos-theme"
 
@@ -124,6 +128,28 @@ elif [ -f "$HELPER" ]; then
     warn "$HELPER stammt nicht von diesem Theme - bleibt erhalten."
 fi
 
+# --- 2b. Mauszeiger + GTK-4 ------------------------------------------------
+if [ -d "$ICON_DIR" ] && [ ! -f "$ICON_DIR/.chromeos-theme" ]; then
+    warn "$ICON_DIR gehoert nicht zu diesem Theme - wird nicht geloescht."
+else
+    remove_path "$ICON_DIR"
+fi
+
+if [ -f "$GTK4_FILE" ]; then
+    if grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null; then
+        remove_path "$GTK4_FILE"
+        if [ -f "$GTK4_BACKUP" ]; then
+            info "Stelle vorherige GTK-4-Datei wieder her"
+            run mv "$GTK4_BACKUP" "$GTK4_FILE"
+        fi
+    else
+        warn "$GTK4_FILE stammt nicht von diesem Theme - bleibt erhalten."
+    fi
+fi
+if [ "$DRY_RUN" -eq 0 ]; then
+    rmdir "$GTK4_DIR" 2>/dev/null || true
+fi
+
 remove_path "$WALLPAPER"
 remove_path "$CONFIG_DIR"
 
@@ -138,6 +164,16 @@ restore_settings() {
     local schema key value
     while IFS=$'\t' read -r schema key value; do
         [ -n "${schema:-}" ] || continue
+        if [ "$value" = '__UNSET__' ]; then
+            # Vor der Installation nie gesetzt: kein Wert schreiben, nur reset.
+            if [ "$DRY_RUN" -eq 1 ]; then
+                printf '      wuerde: gsettings reset %s %s\n' "$schema" "$key"
+                continue
+            fi
+            gsettings reset "$schema" "$key" 2>/dev/null \
+                || warn "Nicht zuruecksetzbar: $schema $key"
+            continue
+        fi
         if [ "$DRY_RUN" -eq 1 ]; then
             printf '      wuerde: gsettings set %s %s %s\n' "$schema" "$key" "$value"
             continue

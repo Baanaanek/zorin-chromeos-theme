@@ -10,6 +10,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {openWebSearch, getEngineName} from './search.js';
+import {ContextMenu} from './menu.js';
 
 const PANEL_WIDTH = 560;
 const PANEL_MAX_HEIGHT = 760;
@@ -23,6 +24,7 @@ export class Launcher {
         this._destroyed = false;
         this._engineName = null;
         this._chromeAdded = false;
+        this._contextMenu = new ContextMenu();
         this._build();
     }
 
@@ -100,6 +102,7 @@ export class Launcher {
 
     destroy() {
         this._destroyed = true;
+        this._contextMenu.destroy();
         if (this._monitorsId) {
             Main.layoutManager.disconnect(this._monitorsId);
             this._monitorsId = 0;
@@ -145,6 +148,7 @@ export class Launcher {
 
     hide() {
         this._visible = false;
+        this._contextMenu.close();
         this.entry.set_text('');
         this.actor.hide();
     }
@@ -251,8 +255,19 @@ export class Launcher {
         box.add_child(label);
 
         button.set_child(box);
+        button._chromeosAppId = app.get_id();
         button.connect('clicked', () => this._launch(app));
+        this._connectContextMenu(app, button);
         return button;
+    }
+
+    _connectContextMenu(app, button) {
+        button.connect('button-press-event', (_actor, event) => {
+            if (event.get_button() !== 3)
+                return Clutter.EVENT_PROPAGATE;
+            this._contextMenu.open(app, button, () => this._refresh());
+            return Clutter.EVENT_STOP;
+        });
     }
 
     _appRow(app) {
@@ -281,7 +296,9 @@ export class Launcher {
         }
         box.add_child(text);
         button.set_child(box);
+        button._chromeosAppId = app.get_id();
         button.connect('clicked', () => this._launch(app));
+        this._connectContextMenu(app, button);
         return button;
     }
 

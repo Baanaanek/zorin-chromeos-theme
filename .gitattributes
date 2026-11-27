@@ -1,6 +1,9 @@
 # Dieses Repo ist fuer Linux gedacht: Textdateien liegen immer mit LF im
 # Arbeitsbaum, unabhaengig von core.autocrlf auf Windows.
 * text=auto eol=lf
+
+# Xcursor-Dateien sind Binaerformat und duerfen nicht umkodiert werden.
+cursor/ChromeOS/cursors/* -text
 *.sh text eol=lf
 bin/chromeos-search-url text eol=lf
 

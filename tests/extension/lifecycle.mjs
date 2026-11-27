@@ -58,6 +58,7 @@ const SPECIFIERS = {
     'gi://Shell': '../mock/Shell.js',
     'resource:///org/gnome/shell/ui/main.js': '../mock/Main.js',
     'resource:///org/gnome/shell/ui/appFavorites.js': '../mock/AppFavorites.js',
+    'resource:///org/gnome/shell/ui/popupMenu.js': '../mock/PopupMenu.js',
     'resource:///org/gnome/shell/extensions/extension.js': '../mock/extension.js',
 };
 
@@ -82,8 +83,9 @@ const apps = await import(url(path.join(MOCKS, 'apps.js')));
 const Main = await import(url(path.join(MOCKS, 'Main.js')));
 const {live, state} = await import(url(path.join(MOCKS, 'state.js')));
 const {appSystem} = await import(url(path.join(MOCKS, 'Shell.js')));
+const {getAppFavorites} = await import(url(path.join(MOCKS, 'AppFavorites.js')));
 
-globalThis.global = {stage: Main.stage, display: Main.display};
+globalThis.global = {stage: Main.stage, display: Main.display, get_current_time: () => 4242};
 
 let total = 0;
 const failures = [];
@@ -285,6 +287,111 @@ check('Escape schliesst den Launcher', () => {
     return true;
 });
 
+// ---------------------------------------------------------- Kontextmenues
+const shelfButton = id =>
+    shelf._appsBox.get_children().find(button => button._chromeosAppId === id);
+const menuLabels = menu => menu.items
+    .map(item => item.label)
+    .filter(label => typeof label === 'string');
+const launcherTile = id => {
+    const grid = launcher.content.get_children()[1];
+    return grid.layout_manager.attached
+        .map(entry => entry.child)
+        .find(child => child._chromeosAppId === id);
+};
+
+check('Rechtsklick auf ein Shelf-Icon oeffnet das Kontextmenue', () => {
+    const button = shelfButton('firefox');
+    const result = button.emit('button-press-event', {get_button: () => 3});
+    eq(result, Clutter.EVENT_STOP, 'Rueckgabe');
+    const menu = shelf._contextMenu.menu;
+    if (!menu)
+        throw new Error('kein Menue geoeffnet');
+    const labels = menuLabels(menu);
+    if (!labels.includes('Von der Shelf entfernen'))
+        throw new Error(`Anheften-Eintrag fehlt: ${labels.join(', ')}`);
+    if (!labels.includes('App-Info'))
+        throw new Error(`App-Info fehlt: ${labels.join(', ')}`);
+    if (labels.includes('Fenster schliessen'))
+        throw new Error('Firefox hat keine Fenster, Schliessen darf fehlen');
+    return true;
+});
+check('Menue entfernt den Favoriten und baut die Shelf neu', () => {
+    const item = shelf._contextMenu.menu.items
+        .find(entry => entry.label === 'Von der Shelf entfernen');
+    item.activate();
+    eq(apps.favorites.length, 1, 'Favoriten');
+    eq(shelf._appsBox.get_children().length, 1, 'Shelf-Apps');
+    return true;
+});
+check('Menue schliesst Fenster ueber window.delete()', () => {
+    const button = shelfButton('org.gnome.Terminal');
+    button.emit('button-press-event', {get_button: () => 3});
+    const labels = menuLabels(shelf._contextMenu.menu);
+    if (!labels.includes('Fenster schliessen'))
+        throw new Error(`Schliessen fehlt: ${labels.join(', ')}`);
+    shelf._contextMenu.menu.items
+        .find(entry => entry.label === 'Fenster schliessen')
+        .activate();
+    eq(state.closedWindows.at(-1), 'terminal-window', 'geschlossenes Fenster');
+    return true;
+});
+check('Menue oeffnet die App-Info ueber appstream://', () => {
+    const button = shelfButton('org.gnome.Terminal');
+    button.emit('button-press-event', {get_button: () => 3});
+    shelf._contextMenu.menu.items
+        .find(entry => entry.label === 'App-Info')
+        .activate();
+    eq(state.appInfoUris.at(-1), 'appstream://org.gnome.Terminal', 'App-Info-URI');
+    return true;
+});
+check('Mittelklick oeffnet weiterhin ein neues Fenster', () => {
+    const before = apps.terminal.opened;
+    const terminal = shelfButton('org.gnome.Terminal');
+    const result = terminal.emit('button-press-event', {get_button: () => 2});
+    eq(result, Clutter.EVENT_STOP, 'Rueckgabe');
+    eq(apps.terminal.opened, before + 1, 'Mittelklick oeffnet neues Fenster');
+    return true;
+});
+check('Rechtsklick im Launcher oeffnet das Menue mit Anheften', () => {
+    launcher.show();
+    const tile = launcherTile('org.gnome.Calculator');
+    const result = tile.emit('button-press-event', {get_button: () => 3});
+    eq(result, Clutter.EVENT_STOP, 'Rueckgabe');
+    const labels = menuLabels(launcher._contextMenu.menu);
+    if (!labels.includes('An die Shelf anheften'))
+        throw new Error(`Anheften fehlt: ${labels.join(', ')}`);
+    return true;
+});
+check('Anheften aus dem Launcher landet in der Shelf', () => {
+    launcher._contextMenu.menu.items
+        .find(entry => entry.label === 'An die Shelf anheften')
+        .activate();
+    eq(apps.favorites.length, 2, 'Favoriten');
+    eq(shelfButton('org.gnome.Calculator') !== undefined, true, 'Shelf-Icon');
+    return true;
+});
+check('Launcher schliessen raeumt das Menue ab', () => {
+    launcher.show();
+    launcherTile('org.gnome.Terminal')
+        .emit('button-press-event', {get_button: () => 3});
+    if (!launcher._contextMenu.menu)
+        throw new Error('kein Menue geoeffnet');
+    launcher.hide();
+    eq(launcher._contextMenu.menu, null, 'offenes Menue');
+    return true;
+});
+check('Favoritenstand fuer die restlichen Pruefungen wiederhergestellt', () => {
+    const favorites = getAppFavorites();
+    if (favorites.isFavorite('org.gnome.Calculator'))
+        favorites.removeFavorite('org.gnome.Calculator');
+    if (!favorites.isFavorite('firefox'))
+        favorites.addFavorite('firefox');
+    eq(favorites.getFavorites().map(app => app.get_id()).sort().join(','),
+        'firefox,org.gnome.Terminal', 'Favoriten');
+    return true;
+});
+
 // -------------------------------------------------------------------- Theme
 check('Shell-Theme-CSS aus dem Benutzerdatenordner wird geladen', () => {
     eq(state.themeLoads.length, 1, 'Ladevorgaenge');
@@ -317,6 +424,8 @@ check('disable() entfernt Launcher und Shelf aus dem Chrome', () => {
     eq(Main.layoutManager.topChrome.length, 0, 'topChrome');
     eq(Main.layoutManager.chrome.length, 0, 'chrome');
     eq(shelf.actor.get_parent(), null, 'Shelf ohne Eltern');
+    eq(shelf._contextMenu.menu, null, 'offenes Kontextmenue');
+    eq(launcher._contextMenu.menu, null, 'offenes Launcher-Menue');
     return true;
 });
 check('disable() haengt die Tray-Knoepfe zurueck und zeigt das Panel', () => {

@@ -76,8 +76,14 @@ export const SubprocessFlags = {
     STDERR_PIPE: 8,
 };
 
+export const AppInfo = {
+    launch_default_for_uri(uri, _context) {
+        state.appInfoUris.push(uri);
+    },
+};
+
 export function lastInterfaceSettings() {
     return settingsInstances.filter(s => s.schema_id === 'org.gnome.desktop.interface').pop();
 }
 
-export default {Settings, File, FileIcon, Subprocess, SubprocessFlags};
+export default {Settings, File, FileIcon, Subprocess, SubprocessFlags, AppInfo};

@@ -1,0 +1,23 @@
+#!/bin/sh
+# dconf-Ersatz: liest ueber den Schema-Pfad aus derselben Wertetabelle wie
+# der gsettings-Stub. Ein fehlender Eintrag bedeutet "nie gesetzt" - genau
+# das muss uninstall.sh von "auf Standard gesetzt" unterscheiden.
+set -u
+
+STATE="${STUB_STATE:?STUB_STATE fehlt}"
+DB="$STATE/gsettings.tsv"
+
+case "${1:-}" in
+    read)
+        path="${2:-}"
+        rest="${path#/}"
+        key="${rest##*/}"
+        schema="${rest%/*}"
+        schema=$(printf '%s' "$schema" | tr '/' '.')
+        awk -F'\t' -v s="$schema" -v k="$key" \
+            '$1==s && $2==k {print $3; exit}' "$DB"
+        ;;
+    *)
+        exit 2
+        ;;
+esac

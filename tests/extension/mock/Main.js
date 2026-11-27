@@ -78,6 +78,7 @@ export const layoutManager = new LayoutManager();
 export const overview = new Overview();
 export const display = new Display();
 export const stage = new St.Widget({name: 'stage'});
+export const uiGroup = new St.Widget({name: 'uiGroup'});
 
 export function activateWindow(window) {
     state.activated.push(window);

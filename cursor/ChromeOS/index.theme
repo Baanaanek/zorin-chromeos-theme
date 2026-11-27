@@ -1,0 +1,7 @@
+[Icon Theme]
+Name=ChromeOS
+Comment=Eigener ChromeOS-artiger Mauszeiger (MIT, Teil des chromeos-theme)
+Inherits=Adwaita
+
+[Icon Theme]
+Example=left_ptr

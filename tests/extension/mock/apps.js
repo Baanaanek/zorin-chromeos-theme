@@ -1,13 +1,21 @@
 // Feste App-Liste fuer die Mocks (deterministisch, ohne echte .desktop-Dateien).
 
 import St from './St.js';
+import {state} from './state.js';
 
 export class FakeApp {
     constructor(name, id, description, windows = []) {
         this._name = name;
         this._id = id;
         this._description = description;
-        this._windows = windows;
+        this._windows = windows.map(window => ({
+            ...window,
+            deleted: 0,
+            delete(_timestamp) {
+                this.deleted++;
+                state.closedWindows.push(this.id);
+            },
+        }));
         this.icon = {name: `${id}-icon`};
         this.opened = 0;
         this._info = {should_show: () => true};

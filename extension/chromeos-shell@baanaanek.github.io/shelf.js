@@ -11,6 +11,8 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as AppFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
 
+import {ContextMenu} from './menu.js';
+
 const SHELF_MARGIN = 8;
 
 function extensionDirectory() {
@@ -47,6 +49,7 @@ export class Shelf {
         this._signals = [];
         this._chromeAdded = false;
         this._destroyed = false;
+        this._contextMenu = new ContextMenu();
         this._build();
     }
 
@@ -119,6 +122,7 @@ export class Shelf {
 
     destroy() {
         this._destroyed = true;
+        this._contextMenu.destroy();
         for (const [object, id] of this._signals) {
             try {
                 object.disconnect(id);
@@ -213,6 +217,13 @@ export class Shelf {
 
         button.connect('clicked', () => this._activate(app));
         button.connect('button-press-event', (_actor, event) => {
+            if (event.get_button() === 3) {
+                this._contextMenu.open(app, button, () => {
+                    this._refreshApps();
+                    this._updateGeometry();
+                });
+                return Clutter.EVENT_STOP;
+            }
             if (event.get_button() === 2) {
                 try {
                     app.open_new_window(-1);
