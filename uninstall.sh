@@ -75,6 +75,36 @@ info "Extension deaktivieren"
 if command -v gnome-extensions >/dev/null 2>&1; then
     run gnome-extensions disable "$EXT_UUID" 2>/dev/null || true
 fi
+
+# Falls die Shell nicht erreichbar war: UUID aus der Aktivierungsliste nehmen.
+remove_from_enabled_list() {
+    command -v gsettings >/dev/null 2>&1 || return 0
+    local current updated
+    current=$(gsettings get org.gnome.shell enabled-extensions 2>/dev/null) || return 0
+    case "$current" in
+        *"$EXT_UUID"*) ;;
+        *) return 0 ;;
+    esac
+    command -v python3 >/dev/null 2>&1 || return 0
+    updated=$(python3 - "$current" "$EXT_UUID" <<'PY'
+import ast, sys
+value, target = sys.argv[1], sys.argv[2]
+try:
+    items = ast.literal_eval(value)
+except Exception:
+    sys.exit(1)
+print("[" + ", ".join("'" + i + "'" for i in items if i != target) + "]")
+PY
+) || return 0
+    [ -n "$updated" ] || return 0
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '      wuerde: gsettings set org.gnome.shell enabled-extensions %s\n' "$updated"
+    else
+        gsettings set org.gnome.shell enabled-extensions "$updated" 2>/dev/null || true
+    fi
+}
+
+remove_from_enabled_list
 remove_path "$EXT_DIR"
 
 # --- 2. Theme + Helfer -----------------------------------------------------
