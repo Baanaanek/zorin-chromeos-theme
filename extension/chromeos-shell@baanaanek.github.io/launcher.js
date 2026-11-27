@@ -20,8 +20,9 @@ const MAX_RESULTS = 8;
 export class Launcher {
     constructor() {
         this._visible = false;
+        this._destroyed = false;
         this._engineName = null;
-        this._apps = [];
+        this._chromeAdded = false;
         this._build();
     }
 
@@ -79,7 +80,7 @@ export class Launcher {
         this.actor.add_child(this.scroll);
 
         getEngineName(name => {
-            if (!name || name === this._engineName)
+            if (this._destroyed || !name || name === this._engineName)
                 return;
             this._engineName = name;
             if (this._visible && this.entry.get_text().trim().length > 0)
@@ -89,20 +90,27 @@ export class Launcher {
 
     enable() {
         this._layout();
-        Main.layoutManager.addTopChrome(this.actor, {
-            visible: false,
-            affectsStruts: false,
-            trackFullscreen: false,
-        });
+        // Keine Extra-Parameter: addTopChrome() reicht sie an Params.parse()
+        // weiter und wirft bei unbekannten Schluesseln.
+        Main.layoutManager.addTopChrome(this.actor);
+        this._chromeAdded = true;
+        this.actor.hide();
         this._monitorsId = Main.layoutManager.connect('monitors-changed', () => this._layout());
     }
 
     destroy() {
+        this._destroyed = true;
         if (this._monitorsId) {
             Main.layoutManager.disconnect(this._monitorsId);
             this._monitorsId = 0;
         }
-        Main.layoutManager.removeChrome(this.actor);
+        try {
+            if (this._chromeAdded)
+                Main.layoutManager.removeChrome(this.actor);
+        } catch (e) {
+            console.warn(`[chromeos-shell] Launcher-Chrome nicht entfernbar: ${e}`);
+        }
+        this._chromeAdded = false;
         this.actor.destroy();
     }
 
@@ -159,9 +167,10 @@ export class Launcher {
         this.scroll.vscroll.adjustment.value = 0;
     }
 
+    // get_installed() liefert bereits nur anzeigbare Apps; Shell.App hat
+    // weder should_show() noch get_keywords().
     _allApps() {
         return Shell.AppSystem.get_default().get_installed()
-            .filter(app => app.should_show())
             .sort((a, b) => a.get_name().localeCompare(b.get_name()));
     }
 
@@ -200,8 +209,8 @@ export class Launcher {
         const matches = this._allApps().filter(app => {
             if (app.get_name().toLowerCase().includes(needle))
                 return true;
-            const keywords = app.get_keywords();
-            return typeof keywords === 'string' && keywords.toLowerCase().includes(needle);
+            const description = app.get_description();
+            return typeof description === 'string' && description.toLowerCase().includes(needle);
         }).slice(0, MAX_RESULTS);
 
         if (matches.length > 0) {

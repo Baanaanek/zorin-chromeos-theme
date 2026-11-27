@@ -25,6 +25,9 @@ CONFIG_DIR="$CONFIG_HOME/chromeos-theme"
 
 DRY_RUN=0
 
+HAVE_GSETTINGS=0
+command -v gsettings >/dev/null 2>&1 && HAVE_GSETTINGS=1
+
 usage() {
     cat <<'EOF'
 ChromeOS-Theme fuer Zorin OS - Deinstallation
@@ -78,7 +81,7 @@ fi
 
 # Falls die Shell nicht erreichbar war: UUID aus der Aktivierungsliste nehmen.
 remove_from_enabled_list() {
-    command -v gsettings >/dev/null 2>&1 || return 0
+    [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
     local current updated
     current=$(gsettings get org.gnome.shell enabled-extensions 2>/dev/null) || return 0
     case "$current" in
@@ -126,6 +129,10 @@ remove_path "$CONFIG_DIR"
 
 # --- 3. Einstellungen zurueck ---------------------------------------------
 restore_settings() {
+    if [ "$HAVE_GSETTINGS" -eq 0 ]; then
+        warn "gsettings nicht verfuegbar - Einstellungen koennen nicht zurueckgesetzt werden."
+        return 0
+    fi
     [ -f "$BACKUP_FILE" ] || { warn "Keine gesicherten Einstellungen gefunden."; return 0; }
     info "Stelle vorherige Einstellungen wieder her"
     local schema key value

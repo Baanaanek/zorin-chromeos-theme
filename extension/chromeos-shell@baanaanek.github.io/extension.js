@@ -35,7 +35,12 @@ export default class ChromeOSShellExtension extends Extension {
         this._syncColorScheme();
 
         // Supertaste oeffnet den Launcher statt der GNOME-Uebersicht.
-        this._overviewId = Main.overview.connect('showing', () => this._onOverviewShowing());
+        this._overviewId = 0;
+        try {
+            this._overviewId = Main.overview.connect('showing', () => this._onOverviewShowing());
+        } catch (e) {
+            console.warn(`[chromeos-shell] Uebersicht nicht abfangbar: ${e}`);
+        }
     }
 
     _syncColorScheme() {
@@ -52,8 +57,9 @@ export default class ChromeOSShellExtension extends Extension {
             Main.overview.hide();
         } catch (e) {
             console.error(`[chromeos-shell] Uebersicht nicht ausblendbar: ${e}`);
+        } finally {
+            this._handlingOverview = false;
         }
-        this._handlingOverview = false;
         this._launcher?.toggle();
     }
 

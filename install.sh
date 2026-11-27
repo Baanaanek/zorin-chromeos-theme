@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Chromebook-Look fuer Zorin OS  (GNOME Shell 45-48, Zorin OS 18 = GNOME 46)
+# ChromeOS-Look fuer Zorin OS  (GNOME Shell 45-48, Zorin OS 18 = GNOME 46)
 #
 #   ./install.sh              installieren (oder erneut ausfuehren)
 #   ./install.sh --activate   nur Theme-Schluessel + Extension aktivieren
@@ -8,7 +8,8 @@
 #
 # Alles landet im Benutzer-Home, es wird kein sudo gebraucht.
 # Vorher gesetzte Einstellungen werden gesichert und von uninstall.sh
-# wiederhergestellt.
+# wiederhergestellt. Ohne GNOME-Sitzung (kein gsettings/gnome-shell) werden
+# nur die Dateien installiert; es gibt dann keinen Abbruch.
 # ---------------------------------------------------------------------------
 set -uo pipefail
 
@@ -30,6 +31,7 @@ WALLPAPER="$WALL_DIR/chromeos-wallpaper.jpg"
 
 DRY_RUN=0
 ACTIVATE_ONLY=0
+SKIPPED=""
 
 usage() {
     cat <<'EOF'
@@ -67,6 +69,11 @@ ok()   { printf '%s  ok%s %s\n' "$C_GREEN" "$C_OFF" "$*"; }
 warn() { printf '%s   !%s %s\n' "$C_YELLOW" "$C_OFF" "$*" >&2; }
 die()  { printf '%s   x%s %s\n' "$C_RED" "$C_OFF" "$*" >&2; exit 1; }
 
+skip() {
+    warn "$*"
+    SKIPPED="${SKIPPED}  - $*"$'\n'
+}
+
 run() {
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '      wuerde: %s\n' "$*"
@@ -76,27 +83,46 @@ run() {
 }
 
 # --- Voraussetzungen -------------------------------------------------------
-command -v gsettings >/dev/null 2>&1 || die "gsettings fehlt - ist das ein GNOME-Desktop?"
 [ -f "$SCRIPT_DIR/theme/$THEME_NAME/gnome-shell/gnome-shell.css" ] \
     || die "Theme-Dateien fehlen. Bitte das komplette Repo verwenden (nicht nur install.sh kopieren)."
 [ -d "$SCRIPT_DIR/extension/$EXT_UUID" ] \
     || die "Extension-Ordner fehlt: extension/$EXT_UUID"
 
+HAVE_GSETTINGS=0
+if command -v gsettings >/dev/null 2>&1; then
+    HAVE_GSETTINGS=1
+else
+    skip "gsettings nicht gefunden (keine GNOME-Sitzung) - Einstellungen werden uebersprungen."
+fi
+
+HAVE_GNOME_EXT=0
+command -v gnome-extensions >/dev/null 2>&1 && HAVE_GNOME_EXT=1
+
 SHELL_MAJOR=""
 if command -v gnome-shell >/dev/null 2>&1; then
     SHELL_MAJOR=$(gnome-shell --version 2>/dev/null | awk '{print $3}' | cut -d. -f1)
-fi
-if [ -n "$SHELL_MAJOR" ] && [ "$SHELL_MAJOR" -lt 45 ] 2>/dev/null; then
-    warn "GNOME Shell $SHELL_MAJOR erkannt. Die Shell-Extension braucht GNOME 45+ (Zorin OS 18)."
-    warn "GTK-Theme und Hintergrund werden trotzdem installiert."
+    case "$SHELL_MAJOR" in
+        ''|*[!0-9]*) SHELL_MAJOR="" ;;
+    esac
 fi
 
-mkdir -p "$STATE_DIR" "$CONFIG_HOME"
-[ -f "$BACKUP_FILE" ] || : > "$BACKUP_FILE"
+if [ -z "$SHELL_MAJOR" ]; then
+    skip "gnome-shell nicht gefunden - Shell-/GTK-Theme wird kopiert, Extension bleibt inaktiv."
+elif [ "$SHELL_MAJOR" -lt 45 ]; then
+    skip "GNOME Shell $SHELL_MAJOR erkannt: Die Shell-Extension braucht GNOME 45+ (Zorin OS 18)."
+    skip "GTK-Theme, Hintergrund und Suchhelfer werden trotzdem installiert."
+fi
+
+if [ "$DRY_RUN" -eq 0 ]; then
+    mkdir -p "$STATE_DIR" "$CONFIG_HOME"
+    [ -f "$BACKUP_FILE" ] || : > "$BACKUP_FILE"
+fi
 
 # --- Helfer ----------------------------------------------------------------
 backup_key() {
     local schema=$1 key=$2 value
+    [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
+    [ "$DRY_RUN" -eq 0 ] || return 0
     if awk -F'\t' -v s="$schema" -v k="$key" '$1==s && $2==k {f=1} END {exit !f}' \
         "$BACKUP_FILE" 2>/dev/null; then
         return 0
@@ -107,6 +133,7 @@ backup_key() {
 
 set_key() {
     local schema=$1 key=$2 value=$3
+    [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
     backup_key "$schema" "$key"
     if [ "$DRY_RUN" -eq 1 ]; then
         printf '      wuerde: gsettings set %s %s %s\n' "$schema" "$key" "$value"
@@ -144,11 +171,14 @@ variant_list() {
     printf '%s]' "$out"
 }
 
+# Reiner Bash-URI: keine python3-Abhaengigkeit.
 file_uri() {
-    python3 - "$1" <<'PY' 2>/dev/null || printf 'file://%s' "$1"
-import pathlib, sys
-print(pathlib.Path(sys.argv[1]).as_uri())
-PY
+    local path=$1
+    path=${path//%/%25}
+    path=${path// /%20}
+    path=${path//#/%23}
+    path=${path//\?/%3F}
+    printf 'file://%s' "$path"
 }
 
 # --- 1. Dateien ------------------------------------------------------------
@@ -188,6 +218,10 @@ install_files() {
 
 # --- 2. Einstellungen ------------------------------------------------------
 apply_settings() {
+    if [ "$HAVE_GSETTINGS" -eq 0 ]; then
+        return 0
+    fi
+
     info "Einstellungen setzen"
     set_key org.gnome.desktop.interface gtk-theme "ChromeOS"
     set_key org.gnome.desktop.interface color-scheme "default"
@@ -196,7 +230,9 @@ apply_settings() {
     set_key org.gnome.desktop.interface clock-show-weekday "true"
     set_key org.gnome.desktop.interface clock-show-seconds "false"
 
-    if command -v fc-match >/dev/null 2>&1 && fc-match "Roboto" 2>/dev/null | grep -qi roboto; then
+    local font_match=""
+    command -v fc-match >/dev/null 2>&1 && font_match=$(fc-match "Roboto" 2>/dev/null)
+    if printf '%s' "$font_match" | grep -qi roboto; then
         set_key org.gnome.desktop.interface font-name "Roboto 11"
     else
         warn "Roboto nicht installiert - Systemschrift bleibt (optional: sudo apt install fonts-roboto)."
@@ -212,7 +248,7 @@ apply_settings() {
 
     local favorites=() id
     id=$(pick_desktop google-chrome.desktop brave-browser.desktop chromium.desktop \
-                      chromium-browser.desktop firefox.desktop org.gnome.Ephemeral.desktop \
+                      chromium-browser.desktop firefox.desktop \
                       org.gnome.Epiphany.desktop) && favorites+=("$id")
     id=$(pick_desktop org.gnome.Nautilus.desktop nautilus.desktop org.gnome.Files.desktop) \
         && favorites+=("$id")
@@ -234,12 +270,16 @@ apply_settings() {
 EXT_CONFLICT_REGEX='zorin-(dash|panel|menu|taskbar)|dash-to-dock|dash-to-panel|ubuntu-dock|arcmenu'
 
 extension_available() {
-    command -v gnome-extensions >/dev/null 2>&1 || return 1
-    gnome-extensions list 2>/dev/null | grep -qxF "$EXT_UUID"
+    [ "$HAVE_GNOME_EXT" -eq 1 ] || return 1
+    local installed
+    # Erst einsammeln, dann vergleichen: `... | grep -q` wuerde unter
+    # `set -o pipefail` durch SIGPIPE (141) faelschlich fehlschlagen.
+    installed=$(gnome-extensions list 2>/dev/null) || return 1
+    printf '%s\n' "$installed" | grep -qxF "$EXT_UUID"
 }
 
 disable_conflicts() {
-    command -v gnome-extensions >/dev/null 2>&1 || { warn "gnome-extensions fehlt"; return 0; }
+    [ "$HAVE_GNOME_EXT" -eq 1 ] || return 0
     local uuid
     for uuid in $(gnome-extensions list --enabled 2>/dev/null); do
         [ "$uuid" = "$EXT_UUID" ] && continue
@@ -258,12 +298,11 @@ disable_conflicts() {
 }
 
 activate_extension() {
-    if [ -n "$SHELL_MAJOR" ] && [ "$SHELL_MAJOR" -lt 45 ] 2>/dev/null; then
-        warn "Extension wird auf GNOME $SHELL_MAJOR nicht geladen (benoetigt 45+)."
+    if [ -n "$SHELL_MAJOR" ] && [ "$SHELL_MAJOR" -lt 45 ]; then
         return 0
     fi
-    if ! command -v gnome-extensions >/dev/null 2>&1; then
-        warn "gnome-extensions nicht gefunden - bitte nach dem Neuanmelden erneut ausfuehren."
+    if [ "$HAVE_GNOME_EXT" -eq 0 ]; then
+        skip "gnome-extensions nicht gefunden - Extension wurde kopiert, aber nicht aktiviert."
         return 0
     fi
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -274,12 +313,10 @@ activate_extension() {
         if gnome-extensions enable "$EXT_UUID" 2>/dev/null; then
             ok "Extension $EXT_UUID aktiviert"
         else
-            warn "Aktivierung erst nach dem Ab- und Anmelden moeglich."
-            warn "Danach: ./install.sh --activate"
+            skip "Aktivierung erst nach dem Ab- und Anmelden moeglich (danach: ./install.sh --activate)."
         fi
     else
-        warn "Extension ist in dieser Sitzung noch unbekannt."
-        warn "Nach dem Ab- und Anmelden: ./install.sh --activate"
+        skip "Extension ist in dieser Sitzung noch unbekannt (nach dem Anmelden: ./install.sh --activate)."
     fi
 }
 
@@ -295,9 +332,15 @@ fi
 
 activate_extension
 
-cat <<EOF
+printf '\n'
+if [ "$DRY_RUN" -eq 1 ]; then
+    echo "Probelauf beendet - nichts wurde geaendert."
+else
+    echo "Fertig."
+fi
+[ -n "$SKIPPED" ] && printf '\nUebersprungen:\n%s' "$SKIPPED"
 
-$( [ "$DRY_RUN" -eq 1 ] && echo "Probelauf beendet - nichts wurde geaendert." || echo "Fertig." )
+cat <<EOF
 
 Naechster Schritt: abmelden und wieder anmelden (Wayland: komplett neu einloggen),
 damit GNOME Shell das Theme und die Extension laedt.

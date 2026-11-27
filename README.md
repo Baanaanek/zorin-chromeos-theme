@@ -212,9 +212,49 @@ Das Shell-Theme wird von der Extension selbst geladen. Dadurch ist keine
 - libadwaita-Apps (z. B. GNOME Einstellungen, Dateien) ignorieren GTK-Themes
   weitgehend; dort wirkt im Wesentlichen der gesetzte blaue Akzent.
 - Auf GNOME 43/44 (Zorin OS 17) wird die Shell-Extension nicht geladen.
-- Getestet wurde die Logik auf einem Windows-Rechner (Skripte, Suchhelfer,
-  Syntax). Ein Lauf im echten GNOME/Zorin-Desktop steht noch aus – bitte
-  Abweichungen als Issue melden.
+
+---
+
+## Geprüft / nicht geprüft
+
+Was konkret nachweisbar geprüft wurde (27.11.2026):
+
+- **Skripte end-to-end**, in einer POSIX-Bash mit Coreutils, temporärem `HOME`
+  und aufzeichnenden Stubs für `gsettings`, `gnome-extensions` und
+  `gnome-shell` – 36 Prüfungen, alle grün:
+  `--dry-run` ändert nichts; der echte Lauf installiert Theme, Extension,
+  Helfer und Wallpaper und setzt die Einstellungen; ein zweiter Lauf ist
+  idempotent (Sicherung unverändert, keine doppelten Einträge);
+  `uninstall.sh` entfernt alle diese Dateien und Ordner, stellt alle zwölf
+  gesicherten `gsettings`-Werte exakt wieder her und reaktiviert die zuvor
+  deaktivierte Zorin-Leiste.
+- **Lauf ohne GNOME**: ohne `gsettings`, `gnome-shell` und
+  `gnome-extensions` brechen beide Skripte nicht ab, kopieren die Dateien,
+  überspringen die Einstellungen und räumen beim Deinstallieren vollständig
+  auf.
+- **Extension-Lebenszyklus** mit den echten Extension-Dateien gegen ein
+  gemocktes GNOME (St, Clutter, Main, Shell) – 22 Prüfungen, alle grün:
+  `enable()` baut Launcher und Shelf, hängt Datum und Schnelleinstellungen
+  um und blendet die Top-Leiste aus; `disable()` entfernt beide
+  Chrome-Actors, setzt die Tray-Buttons an ihre ursprüngliche Position
+  zurück, zeigt die Leiste wieder und schließt alle Signale – auch im
+  zweiten enable/disable-Zyklus.
+- **API-Matrix** gegen die Quellen von GNOME Shell 45.0, 46.0, 47.0 und
+  48.0 sowie Mutter 46: alle genutzten APIs existieren in diesen Versionen
+  (`St.PolicyType`, `addChrome`/`addTopChrome`, `Main.panel.statusArea`,
+  `PanelMenu.Button.container`, `AppFavorites`, `Shell.App.create_icon_texture`,
+  Overview-Signal `showing`, `Gio.Subprocess.new`, `St.Theme.load_stylesheet`,
+  `import.meta.url`); entfernte APIs (`Shell.App.should_show()`,
+  `get_keywords()`) und Legacy-Importe (`imports.*`, `ExtensionUtils`) kommen
+  nicht mehr vor.
+
+Nicht beweisbar ohne laufende GNOME-Sitzung: das tatsächliche Rendering von
+Shell-Theme und CSS, die Position von Popups über der Shelf, das Verhalten
+des echten Shell-Prozesses beim Umhängen der Tray-Buttons und die Optik
+insgesamt. Auf diesem Rechner ließ sich kein Linux starten (WSL2 nicht
+startbar, weil Virtualisierung im BIOS deaktiviert ist; kein Docker/Podman),
+daher lief kein echter `gnome-shell`-Prozess. Bitte Abweichungen als Issue
+melden.
 
 ---
 

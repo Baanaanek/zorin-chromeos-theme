@@ -28,9 +28,14 @@ export class ShellTheme {
             return;
         }
         try {
-            this._theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
-            this._file = Gio.File.new_for_path(path);
-            this._theme.load_stylesheet(this._file);
+            const theme = St.ThemeContext.get_for_stage(global.stage).get_theme();
+            const file = Gio.File.new_for_path(path);
+            if (!theme.load_stylesheet(file)) {
+                console.error('[chromeos-shell] Shell-Theme wurde abgelehnt (CSS-Fehler).');
+                return;
+            }
+            this._theme = theme;
+            this._file = file;
         } catch (e) {
             console.error(`[chromeos-shell] Shell-Theme nicht ladbar: ${e}`);
             this._file = null;

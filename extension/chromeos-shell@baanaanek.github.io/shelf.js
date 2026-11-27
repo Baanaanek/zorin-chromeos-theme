@@ -14,9 +14,20 @@ import * as AppFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
 const SHELF_MARGIN = 8;
 
 function extensionDirectory() {
-    const url = import.meta.url;
-    const path = decodeURIComponent(url.replace(/^file:\/\//, ''));
+    const [path] = GLib.filename_from_uri(import.meta.url);
     return GLib.path_get_dirname(path);
+}
+
+// Shell.App kennt kein should_show(); die Info haengt am GDesktopAppInfo.
+function shouldShow(app) {
+    try {
+        const info = app.get_app_info();
+        if (info)
+            return info.should_show();
+    } catch (e) {
+        // Ohne AppInfo bleibt die App sichtbar.
+    }
+    return true;
 }
 
 function launcherIcon() {
@@ -34,6 +45,8 @@ export class Shelf {
         this._launcher = launcher;
         this._moved = [];
         this._signals = [];
+        this._chromeAdded = false;
+        this._destroyed = false;
         this._build();
     }
 
@@ -88,6 +101,7 @@ export class Shelf {
             affectsInputRegion: true,
             trackFullscreen: true,
         });
+        this._chromeAdded = true;
 
         this._attachTray();
         this._refreshApps();
@@ -104,6 +118,7 @@ export class Shelf {
     }
 
     destroy() {
+        this._destroyed = true;
         for (const [object, id] of this._signals) {
             try {
                 object.disconnect(id);
@@ -114,7 +129,13 @@ export class Shelf {
         this._signals = [];
 
         this._restoreTray();
-        Main.layoutManager.removeChrome(this.actor);
+        try {
+            if (this._chromeAdded)
+                Main.layoutManager.removeChrome(this.actor);
+        } catch (e) {
+            console.warn(`[chromeos-shell] Shelf-Chrome nicht entfernbar: ${e}`);
+        }
+        this._chromeAdded = false;
         this.actor.destroy();
     }
 
@@ -128,7 +149,7 @@ export class Shelf {
     // ------------------------------------------------------------- Geometrie
     _updateGeometry() {
         const monitor = Main.layoutManager.primaryMonitor;
-        if (!monitor)
+        if (!monitor || this._destroyed)
             return;
         const width = Math.max(320, monitor.width - 2 * SHELF_MARGIN);
         this.actor.set_width(width);
@@ -157,7 +178,7 @@ export class Shelf {
         let running = [];
         try {
             running = Shell.AppSystem.get_default().get_running()
-                .filter(app => app.should_show() && !pinnedIds.has(app.get_id()))
+                .filter(app => shouldShow(app) && !pinnedIds.has(app.get_id()))
                 .sort((a, b) => a.get_name().localeCompare(b.get_name()));
         } catch (e) {
             console.warn(`[chromeos-shell] laufende Apps nicht lesbar: ${e}`);
@@ -251,18 +272,20 @@ export class Shelf {
             return;
         }
 
-        const move = actor => {
+        // Erst alle Positionen merken, dann entfernen: sonst verschieben
+        // sich die Indizes der noch nicht bewegten Geschwister.
+        for (const actor of [area.dateMenu?.container, area.quickSettings?.container]) {
             if (!actor || !actor.get_parent())
-                return;
+                continue;
             const parent = actor.get_parent();
             const index = parent.get_children().indexOf(actor);
+            this._moved.push({actor, parent, index});
+        }
+
+        for (const {actor, parent} of this._moved) {
             parent.remove_child(actor);
             this._tray.add_child(actor);
-            this._moved.push({actor, parent, index});
-        };
-
-        move(area.dateMenu?.container);
-        move(area.quickSettings?.container);
+        }
 
         if (this._moved.length > 0) {
             try {
