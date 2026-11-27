@@ -1,0 +1,49 @@
+#!/bin/sh
+# gnome-extensions-Ersatz: haelt installierte/aktivierte UUIDs in Dateien und
+# spiegelt enable/disable nach org.gnome.shell enabled-extensions, so wie es
+# eine echte GNOME-Sitzung tut.
+set -u
+
+STATE="${STUB_STATE:?STUB_STATE fehlt}"
+ENABLED="$STATE/ext-enabled.txt"
+INSTALLED="$STATE/ext-installed.txt"
+
+sync_gsettings() {
+    value='['
+    first=1
+    while IFS= read -r uuid; do
+        [ -n "$uuid" ] || continue
+        if [ "$first" -eq 1 ]; then
+            value="$value'$uuid'"
+            first=0
+        else
+            value="$value, '$uuid'"
+        fi
+    done < "$ENABLED"
+    value="$value]"
+    gsettings set org.gnome.shell enabled-extensions "$value"
+}
+
+case "${1:-}" in
+    list)
+        if [ "${2:-}" = "--enabled" ]; then
+            cat "$ENABLED"
+        else
+            cat "$INSTALLED"
+        fi
+        ;;
+    enable)
+        printf '%s\n' "${2:-}" >> "$STATE/ext-enable.log"
+        grep -qxF -- "${2:-}" "$ENABLED" || printf '%s\n' "${2:-}" >> "$ENABLED"
+        sync_gsettings
+        ;;
+    disable)
+        printf '%s\n' "${2:-}" >> "$STATE/ext-disable.log"
+        grep -vxF -- "${2:-}" "$ENABLED" > "$ENABLED.new" || true
+        mv "$ENABLED.new" "$ENABLED"
+        sync_gsettings
+        ;;
+    *)
+        exit 2
+        ;;
+esac

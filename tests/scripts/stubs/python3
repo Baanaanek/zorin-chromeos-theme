@@ -1,0 +1,27 @@
+#!/bin/sh
+# python3-Ersatz fuer den einen Aufruf in uninstall.sh:
+#   python3 - "<liste>" "<uuid>"
+# Gibt die Liste ohne die UUID zurueck (gleiches Format wie das Original).
+set -u
+
+current="${2:-}"
+target="${3:-}"
+inner=$(printf '%s' "$current" | sed 's/^\[//; s/\]$//')
+
+out=''
+OLD_IFS=$IFS
+IFS=','
+for item in $inner; do
+    name=$(printf '%s' "$item" \
+        | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^'"'"'//; s/'"'"'$//')
+    [ -n "$name" ] || continue
+    [ "$name" = "$target" ] && continue
+    if [ -z "$out" ]; then
+        out="'$name'"
+    else
+        out="$out, '$name'"
+    fi
+done
+IFS=$OLD_IFS
+
+printf '[%s]\n' "$out"

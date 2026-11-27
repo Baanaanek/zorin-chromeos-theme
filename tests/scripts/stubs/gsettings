@@ -1,0 +1,27 @@
+#!/bin/sh
+# gsettings-Ersatz: Werte in $STUB_STATE/gsettings.tsv, jede Aenderung
+# zusaetzlich in $STUB_STATE/gsettings-set.log.
+set -u
+
+STATE="${STUB_STATE:?STUB_STATE fehlt}"
+DB="$STATE/gsettings.tsv"
+
+case "${1:-}" in
+    get)
+        awk -F'\t' -v s="${2:-}" -v k="${3:-}" \
+            '$1==s && $2==k {print $3; exit}' "$DB"
+        ;;
+    set)
+        schema="${2:-}"; key="${3:-}"; value="${4:-}"
+        printf '%s\t%s\t%s\n' "$schema" "$key" "$value" >> "$STATE/gsettings-set.log"
+        awk -F'\t' -v s="$schema" -v k="$key" -v v="$value" '
+            BEGIN {OFS="\t"}
+            $1==s && $2==k {print s, k, v; found=1; next}
+            {print}
+            END {if (!found) print s, k, v}
+        ' "$DB" > "$DB.new" && mv "$DB.new" "$DB"
+        ;;
+    *)
+        exit 2
+        ;;
+esac

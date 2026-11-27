@@ -1,0 +1,6 @@
+#!/bin/sh
+# fc-match-Ersatz: Roboto gilt als installiert.
+case "${1:-}" in
+    Roboto|"Roboto 11") echo 'Roboto-Regular.ttf: "Roboto" "Regular"' ;;
+    *) echo 'DejaVuSans.ttf: "DejaVu Sans" "Book"' ;;
+esac

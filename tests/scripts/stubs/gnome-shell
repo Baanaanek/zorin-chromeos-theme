@@ -1,0 +1,3 @@
+#!/bin/sh
+# gnome-shell-Ersatz. install.sh liest "GNOME Shell <major>".
+echo "GNOME Shell 46.0"

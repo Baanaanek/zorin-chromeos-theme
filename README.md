@@ -204,12 +204,31 @@ extension/chromeos-shell@…/    Launcher, Shelf, Websuche
 assets/wallpapers/             drei eigene Hintergrundmotive
 docs/reference/                ChromeOS-Referenzscreenshots
 docs/design.md                 Design-Tokens, Geometrie, Entscheidungen
+tests/run-all.sh               beide Test-Harnesses
+tests/scripts/                 Install/Uninstall-Harness + Stubs
+tests/extension/               Lifecycle-Harness + GNOME-Mocks
 ```
 
 Das Shell-Theme wird von der Extension selbst geladen. Dadurch ist keine
 `user-theme`-Erweiterung nötig und die Deinstallation bleibt vollständig.
 
 ---
+
+## Tests
+
+Beide Harnesses liegen im Repo und laufen gegen einen frischen Klon, ohne
+GNOME-Sitzung und ohne das echte Benutzerkonto zu verändern:
+
+```bash
+cd ~/zorin-chromeos-theme && bash tests/run-all.sh
+```
+
+| Harness | Prüfungen | Inhalt |
+| --- | --- | --- |
+| `tests/scripts/run.sh` | 57 | Probelauf, Installation, zweiter Lauf, `--activate`, Deinstallation, Wiederherstellung aller zwölf Einstellungen, Lauf ohne GNOME-Werkzeuge |
+| `tests/extension/lifecycle.mjs` | 35 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Tray, Suche, Theme, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
+
+Details und Voraussetzungen: [tests/README.md](tests/README.md).
 
 ## Bekannte Grenzen
 
@@ -234,20 +253,19 @@ Entwicklungs-Arbeitsbaum), Stand `main`:
   Windows-Checkout mit `core.autocrlf=true` LF liefert.
 - **Shebang**: `./install.sh --dry-run` startet im Klon direkt über
   `#!/usr/bin/env bash`, endet mit Exit 0 und schreibt nichts.
-- **Skripte end-to-end** in einer POSIX-Bash mit GNU-Coreutils, temporärem
-  `HOME` und aufzeichnenden Stubs für `gsettings`, `gnome-extensions`,
-  `gnome-shell` und `fc-match` – 57 Prüfungen, alle grün: Dry-Run ohne
-  Änderung; echter Lauf installiert Theme, Extension, Helfer und Wallpaper;
-  zweiter Lauf idempotent; `uninstall.sh` entfernt alles, stellt alle zwölf
-  gesicherten `gsettings`-Werte exakt wieder her und reaktiviert die zuvor
-  deaktivierte Zorin-Leiste. Zusätzlich: Lauf ohne GNOME-Werkzeuge bricht
-  nicht ab und räumt vollständig auf.
-- **Extension-Lebenszyklus** mit den geklonten Quellen gegen ein gemocktes
-  GNOME (St, Clutter, Main, Shell) – 35 Prüfungen, alle grün, inklusive
-  zweitem enable/disable-Zyklus: `enable()` baut Launcher und Shelf, hängt
-  Datum und Schnelleinstellungen um, blendet die Top-Leiste aus; `disable()`
-  entfernt beide Chrome-Actors, setzt die Tray-Buttons an ihre alte Position
-  zurück, zeigt die Leiste wieder und schließt alle Signale.
+- **Skripte end-to-end** über `tests/scripts/run.sh` – 57 Prüfungen, alle
+  grün: Dry-Run ohne Änderung; echter Lauf installiert Theme, Extension,
+  Helfer und Wallpaper; zweiter Lauf idempotent; `uninstall.sh` entfernt
+  alles, stellt alle zwölf gesicherten `gsettings`-Werte exakt wieder her und
+  reaktiviert die zuvor deaktivierten Zorin-Leisten. Zusätzlich: Lauf ohne
+  GNOME-Werkzeuge bricht nicht ab und räumt vollständig auf.
+- **Extension-Lebenszyklus** über `tests/extension/lifecycle.mjs` mit den
+  geklonten Quellen gegen ein gemocktes GNOME (St, Clutter, Main, Shell) –
+  35 Prüfungen, alle grün, inklusive zweitem enable/disable-Zyklus:
+  `enable()` baut Launcher und Shelf, hängt Datum und Schnelleinstellungen
+  um, blendet die Top-Leiste aus; `disable()` entfernt beide Chrome-Actors,
+  setzt die Tray-Buttons an ihre alte Position zurück, zeigt die Leiste
+  wieder und schließt alle Signale.
 - **API-Matrix** gegen die Quellen von GNOME Shell 45.0, 46.0, 47.0 und
   48.0 sowie Mutter 46: alle genutzten APIs existieren; entfernte APIs
   (`Shell.App.should_show()`, `get_keywords()`) und Legacy-Importe
@@ -256,10 +274,11 @@ Entwicklungs-Arbeitsbaum), Stand `main`:
 Nicht beweisbar ohne laufende GNOME-Sitzung: das tatsächliche Rendering von
 Shell-Theme und CSS, die Position von Popups über der Shelf, das Verhalten
 des echten Shell-Prozesses beim Umhängen der Tray-Buttons und die Optik
-insgesamt. Auf diesem Rechner ließ sich kein Linux starten (WSL2 nicht
-startbar, weil Virtualisierung im BIOS deaktiviert ist; kein Docker/Podman),
-die Skripte liefen in einer POSIX-Bash (Git Bash) mit GNU-Coreutils, nicht
-auf einem Linux-Kernel. Bitte Abweichungen als Issue melden.
+insgesamt. Auf diesem Rechner ließ sich kein Linux starten: WSL ist
+installiert, aber ohne Distribution, und WSL2 startet nicht, weil die
+Virtualisierung im BIOS deaktiviert ist (kein Docker/Podman). Die Skripte
+liefen in einer POSIX-Bash (Git Bash) mit GNU-Coreutils, nicht auf einem
+Linux-Kernel. Bitte Abweichungen als Issue melden.
 
 ---
 
