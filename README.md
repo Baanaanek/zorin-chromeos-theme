@@ -51,6 +51,13 @@ Ein Befehl – Repo holen und installieren:
 git clone https://github.com/Baanaanek/zorin-chromeos-theme.git ~/zorin-chromeos-theme && bash ~/zorin-chromeos-theme/install.sh
 ```
 
+Die drei Skripte sind im Repo als ausführbar markiert, deshalb funktioniert
+nach dem Klonen genauso gut:
+
+```bash
+cd ~/zorin-chromeos-theme && ./install.sh
+```
+
 Danach **einmal ab- und wieder anmelden** (unter Wayland komplett neu
 einloggen). Falls der Launcher danach noch fehlt, in der neuen Sitzung:
 
