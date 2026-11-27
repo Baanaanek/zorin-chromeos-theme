@@ -33,8 +33,9 @@ und `theme/ChromeOS/gtk-4.0/gtk.css`.
 
 - Launcher-Knopf als runder Knopf ganz links in der Shelf.
 - Angeheftete Apps, danach laufende Apps mit 4 px Laufpunkt darunter.
-- Tray rechts: Datum/Uhrzeit, dann Status-Icons; Klick oeffnet Kalender bzw.
-  Schnelleinstellungen direkt ueber der Shelf.
+- Tray rechts: Tastaturbelegung, Aufnahme-/Freigabe-Anzeige, Datum/Uhrzeit,
+  dann Schnelleinstellungen; Klick oeffnet Kalender bzw. Schnelleinstellungen
+  direkt ueber der Shelf.
 - Rechtsklick auf ein Icon: Anheften/Entfernen, Fenster schliessen,
   App-Info.
 

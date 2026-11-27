@@ -7,7 +7,7 @@ erstes Argument (Standard: das Repo, in dem sie liegen).
 ```bash
 bash tests/run-all.sh                # beide Harnesses
 bash tests/scripts/run.sh            # nur Install/Uninstall (103 Prüfungen)
-bun tests/extension/lifecycle.mjs    # nur Extension (50 Prüfungen)
+bun tests/extension/lifecycle.mjs    # nur Extension (66 Prüfungen)
 ```
 
 Dazu die Prüfungen ohne GNOME-Bezug, die auch die CI ausführt:
@@ -74,8 +74,13 @@ lädt `extension.js` als echtes ES-Modul. Geprüft werden unter anderem:
   Apps.
 - Seitenpunkte: verborgen bei einer Seite und beim Suchen, sichtbar ab zwei
   Seiten, aktive Marke folgt der Scrollposition.
-- Shelf: Favoriten, Laufpunkt, Uhr und Schnelleinstellungen im Tray,
-  ausgeblendetes GNOME-Panel.
+- Shelf: Favoriten, Laufpunkt, Tastaturbelegung, Aufnahme- und
+  Freigabe-Indikator, Uhr und Schnelleinstellungen im Tray, ausgeblendetes
+  GNOME-Panel, eigener Strut-Actor bis zur Bildschirmkante.
+- Sperrbildschirm über `Main.sessionMode` (isLocked/`updated`): Shelf
+  unsichtbar und Strut aus dem Chrome entfernt, Geometrieänderungen holen ihn
+  nicht zurück, nach dem Entsperren dieselbe Geometrie und Actor-Anzahl,
+  wiederholte Updates erzeugen keine Doppel-Actors.
 - Kontextmenüs: Rechtsklick auf Shelf- und Launcher-Icons, Anheften und
   Entfernen, Fenster schließen über `window.delete()`, App-Info über
   `appstream://`, Mittelklick weiterhin neues Fenster, Aufräumen beim

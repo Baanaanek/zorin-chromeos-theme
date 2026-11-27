@@ -12,24 +12,18 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as AppFavorites from 'resource:///org/gnome/shell/ui/appFavorites.js';
 
 import {ContextMenu} from './menu.js';
+import {shouldShow} from './appInfo.js';
 
 const SHELF_MARGIN = 8;
+
+// Statusanzeigen, die sonst mit dem ausgeblendeten Panel verschwinden.
+// Reihenfolge von links nach rechts; Uhr und Schnelleinstellungen bleiben
+// rechts aussen.
+const STATUS_ROLES = ['keyboard', 'screenRecording', 'remoteAccess'];
 
 function extensionDirectory() {
     const [path] = GLib.filename_from_uri(import.meta.url);
     return GLib.path_get_dirname(path);
-}
-
-// Shell.App kennt kein should_show(); die Info haengt am GDesktopAppInfo.
-function shouldShow(app) {
-    try {
-        const info = app.get_app_info();
-        if (info)
-            return info.should_show();
-    } catch (e) {
-        // Ohne AppInfo bleibt die App sichtbar.
-    }
-    return true;
 }
 
 function launcherIcon() {
@@ -48,6 +42,8 @@ export class Shelf {
         this._moved = [];
         this._signals = [];
         this._chromeAdded = false;
+        this._strutAdded = false;
+        this._locked = false;
         this._destroyed = false;
         this._contextMenu = new ContextMenu();
         this._build();
@@ -88,6 +84,16 @@ export class Shelf {
         this.actor.add_child(this._tray);
 
         this._listen(this.actor, 'notify::height', () => this._updateGeometry());
+
+        // Unsichtbarer Strut-Actor. GNOME legt einen Strut nur an, wenn der
+        // Actor eine Monitor-Kante beruehrt (layout.js, addChrome); die
+        // sichtbare Leiste schwebt aber 8 px ueber dem Rand. Dieser Actor
+        // reicht bis zur Unterkante und traegt die 8 px Luft mit, damit
+        // maximierte Fenster nicht unter der Shelf liegen.
+        this._strutActor = new St.Widget({
+            name: 'chromeosShelfStrut',
+            reactive: false,
+        });
     }
 
     _listen(object, signal, callback) {
@@ -100,21 +106,34 @@ export class Shelf {
 
     enable() {
         Main.layoutManager.addChrome(this.actor, {
-            affectsStruts: true,
             affectsInputRegion: true,
             trackFullscreen: true,
         });
         this._chromeAdded = true;
+        this._addStrut();
 
         this._attachTray();
         this._refreshApps();
         this._updateGeometry();
 
+        // Sperrbildschirm: GNOME schiebt beim Sperren den Session-Mode
+        // "unlock-dialog" ein (isLocked, screenShield.activate) und meldet
+        // das ueber 'updated'. Kein Polling, und der Zustand wird beim
+        // Aktivieren einmal uebernommen, falls schon gesperrt ist.
+        this._syncLocked(Main.sessionMode?.isLocked === true);
+        this._listen(Main.sessionMode, 'updated',
+            () => this._syncLocked(Main.sessionMode.isLocked === true));
+
         this._listen(AppFavorites.getAppFavorites(), 'changed', () => {
             this._refreshApps();
             this._updateGeometry();
         });
-        this._listen(Shell.AppSystem.get_default(), 'app-state-changed', () => this._updateRunning());
+        // Startet oder endet eine App, aendert sich die Menge der Knoepfe,
+        // nicht nur ihr Laufpunkt.
+        this._listen(Shell.AppSystem.get_default(), 'app-state-changed', () => {
+            this._refreshApps();
+            this._updateGeometry();
+        });
         this._listen(Shell.AppSystem.get_default(), 'installed-changed', () => this._refreshApps());
         this._listen(global.display, 'notify::focus-window', () => this._updateRunning());
         this._listen(Main.layoutManager, 'monitors-changed', () => this._updateGeometry());
@@ -133,6 +152,7 @@ export class Shelf {
         this._signals = [];
 
         this._restoreTray();
+        this._removeStrut();
         try {
             if (this._chromeAdded)
                 Main.layoutManager.removeChrome(this.actor);
@@ -140,6 +160,8 @@ export class Shelf {
             console.warn(`[chromeos-shell] Shelf-Chrome nicht entfernbar: ${e}`);
         }
         this._chromeAdded = false;
+        this._strutActor?.destroy();
+        this._strutActor = null;
         this.actor.destroy();
     }
 
@@ -150,6 +172,52 @@ export class Shelf {
             this.actor.remove_style_class_name('chromeos-dark');
     }
 
+    // ------------------------------------------------- Sperrbildschirm
+    // Auf dem Sperrbildschirm darf die Shelf nicht sichtbar sein und ihr
+    // Strut keinen Platz beanspruchen: sonst bliebe die Workarea verkuerzt
+    // und maximierte Fenster starteten unter der gesperrten Leiste.
+    _syncLocked(locked) {
+        if (!this.actor || this._destroyed || locked === this._locked)
+            return;
+        this._locked = locked;
+
+        if (locked) {
+            this.actor.hide();
+            this._removeStrut();
+            return;
+        }
+
+        this.actor.show();
+        this._addStrut();
+        this._updateGeometry();
+    }
+
+    _addStrut() {
+        if (this._strutAdded || !this._strutActor)
+            return;
+        try {
+            Main.layoutManager.addChrome(this._strutActor, {
+                affectsStruts: true,
+                affectsInputRegion: false,
+                trackFullscreen: true,
+            });
+            this._strutAdded = true;
+        } catch (e) {
+            console.warn(`[chromeos-shell] Strut nicht einfuegbar: ${e}`);
+        }
+    }
+
+    _removeStrut() {
+        if (!this._strutAdded || !this._strutActor)
+            return;
+        try {
+            Main.layoutManager.removeChrome(this._strutActor);
+        } catch (e) {
+            console.warn(`[chromeos-shell] Strut nicht entfernbar: ${e}`);
+        }
+        this._strutAdded = false;
+    }
+
     // ------------------------------------------------------------- Geometrie
     _updateGeometry() {
         const monitor = Main.layoutManager.primaryMonitor;
@@ -158,8 +226,14 @@ export class Shelf {
         const width = Math.max(320, monitor.width - 2 * SHELF_MARGIN);
         this.actor.set_width(width);
         const [, height] = this.actor.get_preferred_height(width);
-        this.actor.set_position(monitor.x + SHELF_MARGIN,
-            monitor.y + monitor.height - height - SHELF_MARGIN);
+        const top = monitor.y + monitor.height - height - SHELF_MARGIN;
+        this.actor.set_position(monitor.x + SHELF_MARGIN, top);
+
+        if (this._strutActor) {
+            this._strutActor.set_position(monitor.x, top);
+            this._strutActor.set_size(monitor.width,
+                monitor.y + monitor.height - top);
+        }
     }
 
     // ----------------------------------------------------------------- Apps
@@ -276,6 +350,15 @@ export class Shelf {
     }
 
     // ----------------------------------------------------------------- Tray
+    // GNOME legt jede Statusanzeige unter ihrer Rolle in
+    // Main.panel.statusArea ab; je nach Version ist der Actor das Objekt
+    // selbst oder sein .container.
+    _statusActor(role) {
+        const entry = Main.panel?.statusArea?.[role];
+        const actor = entry?.container ?? entry;
+        return actor?.get_parent ? actor : null;
+    }
+
     _attachTray() {
         const area = Main.panel?.statusArea;
         if (!area) {
@@ -283,10 +366,28 @@ export class Shelf {
             return;
         }
 
+        // Mit dem Panel verschwinden sonst auch die Statusanzeigen, die in
+        // der Leiste sitzen: Tastaturbelegung, Aufnahme- und
+        // Freigabe-Indikator. Sie wandern mit in den Tray; sichtbar bleibt,
+        // was GNOME selbst einblendet (Aufnahme/Freigabe nur bei Bedarf).
+        const wanted = [];
+        for (const role of STATUS_ROLES) {
+            const actor = this._statusActor(role);
+            if (actor)
+                wanted.push(actor);
+            else
+                console.warn(`[chromeos-shell] Statusanzeige "${role}" nicht gefunden.`);
+        }
+        for (const entry of [area.dateMenu, area.quickSettings]) {
+            const actor = entry?.container ?? entry;
+            if (actor?.get_parent)
+                wanted.push(actor);
+        }
+
         // Erst alle Positionen merken, dann entfernen: sonst verschieben
         // sich die Indizes der noch nicht bewegten Geschwister.
-        for (const actor of [area.dateMenu?.container, area.quickSettings?.container]) {
-            if (!actor || !actor.get_parent())
+        for (const actor of wanted) {
+            if (this._moved.some(move => move.actor === actor))
                 continue;
             const parent = actor.get_parent();
             const index = parent.get_children().indexOf(actor);
@@ -308,7 +409,11 @@ export class Shelf {
     }
 
     _restoreTray() {
-        for (const {actor, parent, index} of this._moved) {
+        // Innerhalb eines Elterncontainers in aufsteigender Indexfolge
+        // einsetzen; nur so steht danach jede Anzeige wieder an ihrer Stelle.
+        const moves = [...this._moved].sort((a, b) =>
+            a.parent === b.parent ? a.index - b.index : 0);
+        for (const {actor, parent, index} of moves) {
             const current = actor.get_parent();
             if (current)
                 current.remove_child(actor);

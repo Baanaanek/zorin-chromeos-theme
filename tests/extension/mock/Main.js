@@ -11,12 +11,28 @@ class Panel extends SignalSource {
         this.dateMenu = {container: new St.Widget({name: 'dateMenuContainer'})};
         this.quickSettings = {container: new St.Widget({name: 'quickSettingsContainer'})};
         this.network = {container: new St.Widget({name: 'networkContainer'})};
-        // In GNOME haengen die Menues am Statusbereich, nicht am Panel.
+        // Statusanzeigen wie in GNOME 46. Tastaturbelegung ist sichtbar,
+        // Aufnahme und Freigabe erst waehrend Aufnahme/Freigabe.
+        this.keyboard = {container: new St.Widget({name: 'keyboardContainer'})};
+        this.screenRecording = {
+            container: new St.Widget({name: 'screenRecordingContainer', visible: false}),
+        };
+        this.remoteAccess = {
+            container: new St.Widget({name: 'remoteAccessContainer', visible: false}),
+        };
+        // In GNOME haengen die Menues am Statusbereich, nicht am Panel;
+        // nachgeschlagen wird jede Rolle ueber Main.panel.statusArea[role].
         this.statusArea.dateMenu = this.dateMenu;
         this.statusArea.quickSettings = this.quickSettings;
+        this.statusArea.keyboard = this.keyboard;
+        this.statusArea.screenRecording = this.screenRecording;
+        this.statusArea.remoteAccess = this.remoteAccess;
         this.statusArea.add_child(this.dateMenu.container);
         this.statusArea.add_child(this.quickSettings.container);
         this.statusArea.add_child(this.network.container);
+        this.statusArea.add_child(this.keyboard.container);
+        this.statusArea.add_child(this.screenRecording.container);
+        this.statusArea.add_child(this.remoteAccess.container);
     }
 
     hide() {
@@ -66,6 +82,20 @@ class Overview extends SignalSource {
     }
 }
 
+// Session-Modus wie in GNOME 46: Eigenschaft isLocked, Aenderungen kommen
+// ueber 'updated' (sessionMode.js _sync), nicht ueber Polling.
+class SessionMode extends SignalSource {
+    constructor() {
+        super(true);
+        this.isLocked = false;
+    }
+
+    setLocked(locked) {
+        this.isLocked = locked;
+        this.emit('updated');
+    }
+}
+
 class Display extends SignalSource {
     constructor() {
         super(true);
@@ -76,6 +106,7 @@ class Display extends SignalSource {
 export const panel = new Panel();
 export const layoutManager = new LayoutManager();
 export const overview = new Overview();
+export const sessionMode = new SessionMode();
 export const display = new Display();
 export const stage = new St.Widget({name: 'stage'});
 export const uiGroup = new St.Widget({name: 'uiGroup'});

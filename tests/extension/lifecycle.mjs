@@ -102,9 +102,19 @@ function check(name, fn) {
     }
 }
 
+// Actor-Objekte sind zyklisch (Kind/Eltern); JSON.stringify wuerde die
+// Fehlermeldung verschlucken und nur "cyclic structures" melden.
+function describe(value) {
+    try {
+        return JSON.stringify(value) ?? String(value);
+    } catch (e) {
+        return String(value);
+    }
+}
+
 function eq(actual, expected, label = 'Wert') {
     if (actual !== expected)
-        throw new Error(`${label}: erwartet ${JSON.stringify(expected)}, war ${JSON.stringify(actual)}`);
+        throw new Error(`${label}: erwartet ${describe(expected)}, war ${describe(actual)}`);
 }
 
 function texts(actor, collected = []) {
@@ -113,6 +123,14 @@ function texts(actor, collected = []) {
     for (const child of actor?.get_children?.() ?? [])
         texts(child, collected);
     return collected;
+}
+
+function isDescendant(ancestor, actor) {
+    for (let node = actor?.get_parent?.(); node; node = node.get_parent?.()) {
+        if (node === ancestor)
+            return true;
+    }
+    return false;
 }
 
 // ------------------------------------------------------------------ Statisch
@@ -178,12 +196,24 @@ check('Shelf-Actor wird gebaut', () => {
     eq(shelf.actor.name, 'chromeosShelf');
     return true;
 });
-check('Shelf haengt in addChrome() mit Struts und Fullscreen', () => {
-    eq(Main.layoutManager.chrome.length, 1);
+check('Shelf und Strut-Actor haengen in addChrome()', () => {
+    eq(Main.layoutManager.chrome.length, 2, 'Chrome-Actors');
     const call = Main.layoutManager.calls.find(entry => entry.actor === shelf.actor);
-    eq(call.params.affectsStruts, true, 'affectsStruts');
     eq(call.params.affectsInputRegion, true, 'affectsInputRegion');
     eq(call.params.trackFullscreen, true, 'trackFullscreen');
+    eq(call.params.affectsStruts, undefined, 'Shelf selbst traegt keinen Strut');
+    return true;
+});
+check('Strut-Actor beruehrt die Unterkante und spannt die Monitorbreite', () => {
+    const call = Main.layoutManager.calls.find(entry => entry.actor === shelf._strutActor);
+    if (!call)
+        throw new Error('kein addChrome-Aufruf fuer den Strut-Actor');
+    eq(call.params.affectsStruts, true, 'affectsStruts');
+    eq(call.params.affectsInputRegion, false, 'affectsInputRegion');
+    eq(shelf._strutActor.x, 0, 'x');
+    eq(shelf._strutActor.width, 1920, 'Breite');
+    eq(shelf._strutActor.height, 64, 'Hoehe inkl. 8px Luft');
+    eq(shelf._strutActor.y + shelf._strutActor.height, 1080, 'Unterkante');
     return true;
 });
 check('Shelf ist 1904 breit und sitzt 8px ueber dem Rand', () => {
@@ -203,6 +233,28 @@ check('Shelf zeigt Favoriten und markiert laufende Apps', () => {
     eq(firefoxButton._chromeosDot.visible, false, 'Laufpunkt Firefox');
     return true;
 });
+check('app-state-changed baut die Shelf neu auf', () => {
+    apps.running.push(apps.files);
+    appSystem.emit('app-state-changed');
+    const ids = shelf._appsBox.get_children().map(button => button._chromeosAppId);
+    if (!ids.includes('org.gnome.Nautilus'))
+        throw new Error(`laufende App fehlt: ${ids.join(', ')}`);
+    eq(shelf._appsBox.get_children().length, 3, 'Shelf-Apps');
+    apps.running.splice(apps.running.indexOf(apps.files), 1);
+    appSystem.emit('app-state-changed');
+    eq(shelf._appsBox.get_children().length, 2, 'Shelf-Apps nach App-Ende');
+    return true;
+});
+check('Shelf nimmt versteckte laufende Apps nicht auf', () => {
+    apps.running.push(apps.hidden);
+    appSystem.emit('app-state-changed');
+    const ids = shelf._appsBox.get_children().map(button => button._chromeosAppId);
+    if (ids.includes('hidden-tool'))
+        throw new Error('NoDisplay-App steht in der Shelf');
+    apps.running.splice(apps.running.indexOf(apps.hidden), 1);
+    appSystem.emit('app-state-changed');
+    return true;
+});
 check('Datum-Knopf liegt in der Shelf', () =>
     eq(Main.panel.dateMenu.container.get_parent(), shelf._tray));
 check('Schnelleinstellungen liegen in der Shelf', () =>
@@ -217,6 +269,94 @@ check('Tray-Reihenfolge: Datum vor Schnelleinstellungen', () => {
 });
 check('GNOME-Panel ist ausgeblendet', () => eq(Main.panel.visible, false));
 
+// ----------------------------------------- Statusanzeigen in der Shelf
+// Ohne Umhaengen verschwinden diese Anzeigen mit dem ausgeblendeten Panel.
+const statusIndicators = () => [
+    ['Tastaturbelegung', Main.panel.keyboard.container],
+    ['Aufnahme', Main.panel.screenRecording.container],
+    ['Freigabe', Main.panel.remoteAccess.container],
+];
+
+check('Tastaturbelegung liegt sichtbar in der Shelf', () => {
+    const actor = Main.panel.keyboard.container;
+    eq(actor.get_parent(), shelf._tray, 'Eltern');
+    eq(actor.visible, true, 'sichtbar');
+    eq(isDescendant(Main.panel.statusArea, actor), false, 'noch im Panel');
+    return true;
+});
+check('Aufnahme-Indikator liegt in der Shelf und folgt GNOME', () => {
+    const actor = Main.panel.screenRecording.container;
+    eq(actor.get_parent(), shelf._tray, 'Eltern');
+    eq(actor.visible, false, 'ohne Aufnahme verborgen');
+    actor.show();
+    eq(actor.visible, true, 'waehrend der Aufnahme sichtbar');
+    actor.hide();
+    return true;
+});
+check('Freigabe-Indikator liegt in der Shelf und folgt GNOME', () => {
+    const actor = Main.panel.remoteAccess.container;
+    eq(actor.get_parent(), shelf._tray, 'Eltern');
+    eq(actor.visible, false, 'ohne Freigabe verborgen');
+    actor.show();
+    eq(actor.visible, true, 'waehrend der Freigabe sichtbar');
+    actor.hide();
+    return true;
+});
+check('Statusanzeigen haengen nicht unter dem ausgeblendeten Panel', () => {
+    eq(Main.panel.visible, false, 'Panel sichtbar');
+    for (const [label, actor] of statusIndicators()) {
+        if (isDescendant(Main.panel.statusArea, actor))
+            throw new Error(`${label} haengt noch im Panel`);
+        eq(actor.get_parent(), shelf._tray, `${label}-Eltern`);
+    }
+    return true;
+});
+check('Tray-Reihenfolge: Statusanzeigen vor Datum und Schnelleinstellungen', () => {
+    const children = shelf._tray.get_children();
+    const expected = [...statusIndicators().map(([, actor]) => actor),
+        Main.panel.dateMenu.container, Main.panel.quickSettings.container];
+    eq(children.length, expected.length, 'Tray-Kinder');
+    expected.forEach((actor, index) => eq(children[index], actor, `Kind ${index}`));
+    return true;
+});
+
+// --------------------------------------------------------- Sperrbildschirm
+check('Sperrbildschirm-Signal haengt genau einmal am SessionMode', () =>
+    eq(Main.sessionMode.openSignals(), 1, 'SessionMode-Signale'));
+check('Lock: Shelf unsichtbar, Strut aus dem Chrome entfernt', () => {
+    Main.sessionMode.setLocked(true);
+    eq(shelf.actor.visible, false, 'Shelf sichtbar');
+    eq(Main.layoutManager.chrome.includes(shelf._strutActor), false, 'Strut im Chrome');
+    eq(Main.layoutManager.chrome.length, 1, 'Chrome-Actors');
+    return true;
+});
+check('Lock: Geometrieaenderung holt den Strut nicht zurueck', () => {
+    shelf._updateGeometry();
+    eq(Main.layoutManager.chrome.includes(shelf._strutActor), false, 'Strut im Chrome');
+    eq(Main.layoutManager.chrome.length, 1, 'Chrome-Actors');
+    return true;
+});
+check('Unlock: Shelf und Strut in vorheriger Geometrie zurueck', () => {
+    const strut = shelf._strutActor;
+    Main.sessionMode.setLocked(false);
+    eq(shelf.actor.visible, true, 'Shelf sichtbar');
+    eq(Main.layoutManager.chrome.length, 2, 'Chrome-Actors');
+    eq(Main.layoutManager.chrome.includes(strut), true, 'derselbe Strut-Actor');
+    eq(strut.x, 0, 'x');
+    eq(strut.width, 1920, 'Breite');
+    eq(strut.height, 64, 'Hoehe inkl. 8px Luft');
+    eq(strut.y + strut.height, 1080, 'Unterkante');
+    eq(shelf.actor.y, 1016, 'Shelf y');
+    return true;
+});
+check('Unlock: wiederholte Session-Updates erzeugen keine Doppel-Actors', () => {
+    Main.sessionMode.emit('updated');
+    Main.sessionMode.emit('updated');
+    eq(Main.layoutManager.chrome.filter(actor => actor === shelf._strutActor).length, 1, 'Strut');
+    eq(Main.layoutManager.chrome.length, 2, 'Chrome-Actors');
+    return true;
+});
+
 // ------------------------------------------------------------- Launcher-Logik
 check('Shelf-Knopf oeffnet den Launcher', () => {
     shelf._launcherButton.emit('clicked');
@@ -229,12 +369,21 @@ check('zweiter Klick schliesst ihn wieder', () => {
     eq(launcher.actor.visible, false);
     return true;
 });
-check('leere Suche zeigt alle sechs Apps im Raster', () => {
+check('leere Suche zeigt alle sechs sichtbaren Apps im Raster', () => {
     launcher.show();
     const attached = launcher.content.get_children()[1].layout_manager.attached;
-    eq(attached.length, apps.installed.length);
+    eq(attached.length, apps.visibleApps.length);
     eq(attached[0].column, 0);
     eq(attached[5].row, 1);
+    return true;
+});
+check('Launcher blendet Apps mit should_show() == false aus', () => {
+    launcher.show();
+    const ids = launcher.content.get_children()[1].layout_manager.attached
+        .map(entry => entry.child._chromeosAppId);
+    if (ids.includes('hidden-tool'))
+        throw new Error('NoDisplay-App steht im Raster');
+    eq(ids.length, apps.visibleApps.length, 'sichtbare Apps');
     return true;
 });
 check('Suche filtert Apps und zeigt Web-Zeile', () => {
@@ -271,7 +420,7 @@ check('Loesch-Knopf leert das Feld und zeigt wieder alle Apps', () => {
     eq(launcher.entry.get_text(), '', 'Feld');
     eq(launcher._clearButton.visible, false, 'Knopf');
     const attached = launcher.content.get_children()[1].layout_manager.attached;
-    eq(attached.length, apps.installed.length, 'Raster');
+    eq(attached.length, apps.visibleApps.length, 'Raster');
     return true;
 });
 check('Seitenpunkte bleiben bei einer Seite verborgen', () => {
@@ -368,6 +517,18 @@ check('Rechtsklick auf ein Shelf-Icon oeffnet das Kontextmenue', () => {
         throw new Error(`App-Info fehlt: ${labels.join(', ')}`);
     if (labels.includes('Fenster schliessen'))
         throw new Error('Firefox hat keine Fenster, Schliessen darf fehlen');
+    return true;
+});
+check('Kontextmenue haengt an einem PopupMenuManager', () => {
+    const menu = shelf._contextMenu.menu;
+    if (!menu)
+        throw new Error('kein Menue geoeffnet');
+    if (!menu._manager)
+        throw new Error('kein PopupMenuManager');
+    eq(menu._manager.owner, shelfButton('firefox'), 'Owner');
+    if (!menu._manager.menus.includes(menu._menu))
+        throw new Error('Menue nicht beim Manager registriert');
+    eq(menu._menu.yPosition, undefined, 'kein totes viertes Argument');
     return true;
 });
 check('Menue entfernt den Favoriten und baut die Shelf neu', () => {
@@ -477,31 +638,51 @@ check('disable() entfernt Launcher und Shelf aus dem Chrome', () => {
     extension.disable();
     eq(Main.layoutManager.topChrome.length, 0, 'topChrome');
     eq(Main.layoutManager.chrome.length, 0, 'chrome');
+    eq(shelf._strutActor, null, 'Strut-Actor');
     eq(shelf.actor.get_parent(), null, 'Shelf ohne Eltern');
     eq(shelf._contextMenu.menu, null, 'offenes Kontextmenue');
     eq(launcher._contextMenu.menu, null, 'offenes Launcher-Menue');
     return true;
 });
-check('disable() haengt die Tray-Knoepfe zurueck und zeigt das Panel', () => {
+check('disable() haengt Tray-Knoepfe und Statusanzeigen zurueck', () => {
     const area = Main.panel.statusArea;
-    eq(area.get_children().length, 3);
-    eq(area.get_children()[0], Main.panel.dateMenu.container);
-    eq(area.get_children()[1], Main.panel.quickSettings.container);
-    eq(area.get_children()[2], Main.panel.network.container);
+    eq(area.get_children().length, 6, 'Statusbereich');
+    eq(area.get_children()[0], Main.panel.dateMenu.container, 'Datum');
+    eq(area.get_children()[1], Main.panel.quickSettings.container, 'Schnelleinstellungen');
+    eq(area.get_children()[2], Main.panel.network.container, 'Netzwerk');
+    eq(area.get_children()[3], Main.panel.keyboard.container, 'Tastaturbelegung');
+    eq(area.get_children()[4], Main.panel.screenRecording.container, 'Aufnahme');
+    eq(area.get_children()[5], Main.panel.remoteAccess.container, 'Freigabe');
     eq(Main.panel.visible, true, 'Panel sichtbar');
     return true;
 });
-check('disable() loest alle Sitzungs-Signale', () => eq(live.handlers, 0));
+check('disable() loest alle Sitzungs-Signale', () => {
+    eq(live.handlers, 0);
+    eq(Main.sessionMode.openSignals(), 0, 'SessionMode-Signale');
+    return true;
+});
 check('zweiter enable/disable-Zyklus bleibt sauber', () => {
     extension.enable();
     if (live.handlers === 0)
         throw new Error('keine Signale nach erneutem enable()');
-    if (Main.layoutManager.chrome.length !== 1 || Main.layoutManager.topChrome.length !== 1)
+    if (Main.layoutManager.chrome.length !== 2 || Main.layoutManager.topChrome.length !== 1)
         throw new Error('Chrome nicht neu aufgebaut');
+    eq(Main.sessionMode.openSignals(), 1, 'SessionMode-Signale nach erneutem enable()');
     extension.disable();
     eq(live.handlers, 0, 'offene Signale');
     eq(Main.layoutManager.chrome.length, 0, 'chrome');
     eq(Main.layoutManager.topChrome.length, 0, 'topChrome');
+    return true;
+});
+check('zweiter Zyklus haengt die Statusanzeigen wieder an ihren Platz', () => {
+    // Nach dem zweiten disable() darf _moved nichts mehr offen haben: sonst
+    // landen die Anzeigen beim dritten Lauf doppelt oder gar nicht im Panel.
+    eq(shelf._moved.length, 0, 'offene Umhaengungen');
+    const area = Main.panel.statusArea;
+    eq(area.get_children().length, 6, 'Statusbereich');
+    eq(area.get_children()[3], Main.panel.keyboard.container, 'Tastaturbelegung');
+    eq(area.get_children()[4], Main.panel.screenRecording.container, 'Aufnahme');
+    eq(area.get_children()[5], Main.panel.remoteAccess.container, 'Freigabe');
     return true;
 });
 

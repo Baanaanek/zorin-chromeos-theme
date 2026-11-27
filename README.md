@@ -25,7 +25,7 @@ derselben MIT-Lizenz wie das Theme.
 | --- | --- |
 | Launcher | Panel oben links, 560 px breit, Suchzeile mit Lupe und Lösch-Knopf, App-Raster mit 5 Spalten, Seitenpunkte unter dem Raster |
 | Shelf | 56 px hohe, schwebende Leiste unten: runder Launcher-Knopf links, angeheftete und laufende Apps, Uhr und Status rechts |
-| Tray | echte GNOME-Knöpfe, in die Shelf umgehängt – Kalender und Schnelleinstellungen erscheinen direkt über der Leiste |
+| Tray | echte GNOME-Knöpfe, in die Shelf umgehängt – Tastaturbelegung, Aufnahme- und Freigabe-Anzeige, Kalender und Schnelleinstellungen sitzen in der Leiste |
 | Mauszeiger | eigener Xcursor-Satz, 52 Namen, 24/48 px (`cursor/ChromeOS/`) |
 | Hintergründe | drei eigene Motive, per Skript erzeugt (`tools/build-wallpapers.mjs`) |
 | Sperrbildschirm | Konto-Bild (96 px, rund, ohne Rahmen), Name in Weiß, Passwortfeld als dunkle Kapsel mit weißer Schrift, Benachrichtigungen als dunkle Karten; Hintergrund ist der weichgezeichnete Desktop-Hintergrund |
@@ -339,7 +339,7 @@ cd ~/zorin-chromeos-theme && bash tests/run-all.sh
 | Harness | Prüfungen | Inhalt |
 | --- | --- | --- |
 | `tests/scripts/run.sh` | 103 | Probelauf, `--version`, `--check` vor und nach der Installation, echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 22 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, Lauf ohne GNOME-Werkzeuge |
-| `tests/extension/lifecycle.mjs` | 50 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Tray, Suche, Lösch-Knopf, Seitenpunkte, Kontextmenüs, Theme, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
+| `tests/extension/lifecycle.mjs` | 66 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Strut, Sperrbildschirm (Shelf und Strut aus dem Chrome, danach unveränderte Geometrie), laufende Apps, `should_show()`, Tray inklusive Tastaturbelegung, Aufnahme- und Freigabe-Indikator, Suche, Lösch-Knopf, Seitenpunkte, Kontextmenüs, Theme, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
 
 Dazu drei Prüfungen ohne GNOME-Bezug:
 
@@ -411,9 +411,10 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
   Sperrbildschirm enthält.
 - **Extension-Lebenszyklus** über `tests/extension/lifecycle.mjs` mit den
   echten Quellen gegen ein gemocktes GNOME (St, Clutter, Main, Shell,
-  PopupMenu) – 50 Prüfungen, alle grün, inklusive Lösch-Knopf im Suchfeld,
+  PopupMenu) – 66 Prüfungen, alle grün, inklusive Lösch-Knopf im Suchfeld,
   Seitenpunkten unter dem App-Raster und zweitem
-  enable/disable-Zyklus: `enable()` baut Launcher und Shelf, hängt Datum und
+  enable/disable-Zyklus: `enable()` baut Launcher und Shelf, hängt
+  Tastaturbelegung, Aufnahme- und Freigabe-Indikator sowie Datum und
   Schnelleinstellungen um, blendet die Top-Leiste aus; Rechtsklick öffnet
   Anheften/Entfernen, Fenster schließen und App-Info; `disable()` entfernt
   beide Chrome-Actors, schließt offene Menüs, setzt die Tray-Buttons an ihre

@@ -24,9 +24,16 @@ export class AppMenu {
     constructor(app, sourceActor, onChanged) {
         this._app = app;
         this._onChanged = onChanged;
-        // In GNOME 45+ ist PopupMenu selbst ein St.Widget (kein .actor mehr).
-        this._menu = new PopupMenu.PopupMenu(sourceActor, 0.0, St.Side.BOTTOM, 0);
+        // In GNOME 45+ ist PopupMenu selbst ein St.Widget (kein .actor mehr);
+        // der Konstruktor kennt nur (sourceActor, arrowAlignment, arrowSide).
+        this._menu = new PopupMenu.PopupMenu(sourceActor, 0.0, St.Side.BOTTOM);
         this._menu.add_style_class_name('chromeos-app-menu');
+
+        // Ohne Manager bleibt das Menue bei Klick daneben und Escape offen:
+        // genau dafuer haengt GNOME jedes PopupMenu an einen.
+        this._manager = new PopupMenu.PopupMenuManager(sourceActor);
+        this._manager.addMenu(this._menu);
+
         Main.uiGroup.add_child(this._menu);
         this._menu.hide();
         this._build();
@@ -99,7 +106,13 @@ export class AppMenu {
 
     destroy() {
         try {
-            this._menu.destroy();
+            this._manager?.destroy?.();
+        } catch (e) {
+            // Manager war schon weg.
+        }
+        this._manager = null;
+        try {
+            this._menu?.destroy();
         } catch (e) {
             // Menue war schon weg.
         }

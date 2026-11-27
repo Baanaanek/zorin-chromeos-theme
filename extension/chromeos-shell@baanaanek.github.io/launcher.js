@@ -10,6 +10,7 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {openWebSearch, getEngineName} from './search.js';
+import {shouldShow} from './appInfo.js';
 import {ContextMenu} from './menu.js';
 
 const PANEL_WIDTH = 560;
@@ -258,10 +259,11 @@ export class Launcher {
         this._dots.show();
     }
 
-    // get_installed() liefert bereits nur anzeigbare Apps; Shell.App hat
-    // weder should_show() noch get_keywords().
+    // get_installed() enthaelt auch NoDisplay-/OnlyShowIn-Eintraege; GNOME
+    // filtert sie mit should_show(), also tun wir das genauso.
     _allApps() {
         return Shell.AppSystem.get_default().get_installed()
+            .filter(app => shouldShow(app))
             .sort((a, b) => a.get_name().localeCompare(b.get_name()));
     }
 

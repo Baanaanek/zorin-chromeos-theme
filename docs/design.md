@@ -62,7 +62,10 @@ Schrift          "Roboto" (liegt im Repo bei), Monospace "Roboto Mono"
   laufenden Fenstern) und App-Info (oeffnet `appstream://<app-id>`).
 - Uhr und Status-Icons rechts in der Shelf sind die echten
   GNOME-Panel-Buttons: Klick oeffnet Kalender bzw. Schnelleinstellungen,
-  die dann direkt ueber der Shelf erscheinen.
+  die dann direkt ueber der Shelf erscheinen. Mit dem Panel wandern auch
+  Tastaturbelegung, Aufnahme- und Freigabe-Indikator in die Shelf; sie
+  waeren sonst mit der ausgeblendeten Leiste verschwunden. Ihre
+  Sichtbarkeit steuert weiter GNOME (Aufnahme/Freigabe nur bei Bedarf).
 
 - Der Sperrbildschirm folgt dem echten ChromeOS (1366 x 768): Konto-Bild
   96 px rund und ohne Rahmen, darunter der Name in 18 pt normaler Staerke,

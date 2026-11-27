@@ -149,7 +149,7 @@ settings_restored() {
 extension_files_ok() {
     local file
     for file in extension.js launcher.js shelf.js theme.js search.js menu.js \
-                stylesheet.css metadata.json icons/launcher.svg; do
+                appInfo.js stylesheet.css metadata.json icons/launcher.svg; do
         [ -f "$EXT_DIR/$file" ] || return 1
     done
 }

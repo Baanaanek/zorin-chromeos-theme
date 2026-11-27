@@ -4,7 +4,7 @@ import St from './St.js';
 import {state} from './state.js';
 
 export class FakeApp {
-    constructor(name, id, description, windows = []) {
+    constructor(name, id, description, windows = [], visible = true) {
         this._name = name;
         this._id = id;
         this._description = description;
@@ -18,7 +18,11 @@ export class FakeApp {
         }));
         this.icon = {name: `${id}-icon`};
         this.opened = 0;
-        this._info = {should_show: () => true};
+        this._info = {should_show: () => visible};
+    }
+
+    should_show() {
+        return this._info.should_show();
     }
 
     get_name() {
@@ -60,6 +64,11 @@ export const editor = new FakeApp('Text Editor', 'org.gnome.TextEditor', 'Text s
 export const settings = new FakeApp('Settings', 'org.gnome.Settings', 'Systemeinstellungen');
 export const calculator = new FakeApp('Calculator', 'org.gnome.Calculator', 'Rechnen');
 
-export const installed = [terminal, firefox, files, editor, settings, calculator];
+// NoDisplay-App: get_installed() liefert sie, angezeigt werden darf sie nicht.
+export const hidden = new FakeApp('Hidden Tool', 'hidden-tool',
+    'Nicht anzeigen', [], false);
+
+export const installed = [terminal, firefox, files, editor, settings, calculator, hidden];
+export const visibleApps = installed.filter(app => app.should_show());
 export const running = [terminal];
 export const favorites = [firefox, terminal];

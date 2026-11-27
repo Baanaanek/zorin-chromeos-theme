@@ -15,6 +15,31 @@ export class PopupMenuItem {
     }
 }
 
+// Manager, der in GNOME Aussenklick und Escape schliesst. Der Mock haelt nur
+// fest, ob ein Menue registriert wurde.
+export class PopupMenuManager {
+    constructor(owner, params = {}) {
+        this.owner = owner;
+        this.params = params;
+        this.menus = [];
+        this.destroyed = false;
+    }
+
+    addMenu(menu) {
+        this.menus.push(menu);
+        menu._manager = this;
+    }
+
+    removeMenu(menu) {
+        this.menus = this.menus.filter(candidate => candidate !== menu);
+    }
+
+    destroy() {
+        this.destroyed = true;
+        this.menus = [];
+    }
+}
+
 export class PopupSeparatorMenuItem {
     constructor() {
         this.actor = new St.Widget({name: 'popupSeparator'});
@@ -63,4 +88,4 @@ export class PopupMenu extends St.BoxLayout {
     }
 }
 
-export default {PopupMenu, PopupMenuItem, PopupSeparatorMenuItem};
+export default {PopupMenu, PopupMenuItem, PopupMenuManager, PopupSeparatorMenuItem};
