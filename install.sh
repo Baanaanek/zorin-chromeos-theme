@@ -502,6 +502,15 @@ check_state() {
     expect_file "Theme-Markierung" "$THEME_DIR/.chromeos-theme"
     expect_file "Extension" "$EXT_DIR/metadata.json"
 
+    # Faengt eine alte Theme-Kopie ohne Sperrbildschirm-Regeln ab.
+    if grep -q 'user-widget.vertical' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
+        && grep -q 'login-dialog-prompt-entry' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null; then
+        ok "Sperrbildschirm-CSS"
+    else
+        printf '%s   x%s Sperrbildschirm-CSS fehlt im Shell-Theme\n' "$C_RED" "$C_OFF" >&2
+        CHECK_FAILED=$((CHECK_FAILED + 1))
+    fi
+
     if [ -x "$BIN_DIR/chromeos-search-url" ]; then
         ok "Suchhelfer"
     else
@@ -657,6 +666,8 @@ Danach:
   * runder Knopf links unten oder Supertaste  -> ChromeOS-Launcher
   * Tippen im Launcher                        -> Apps filtern, Enter oeffnet
   * Uhr / Status rechts unten                 -> Kalender / Schnelleinstellungen
+  * Super+L                                   -> Chromebook-Sperrbildschirm
+    (Uhr, Konto-Kreis, Passwortfeld; Hintergrund wie der Desktop)
   * Rechtsklick auf ein Shelf- oder Launcher-Icon -> Anheften, Schliessen, App-Info
   * Websuche nutzt die Suchmaschine des Standardbrowsers
     (Override: $CONFIG_HOME/chromeos-theme/config.json)

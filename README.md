@@ -28,11 +28,30 @@ derselben MIT-Lizenz wie das Theme.
 | Tray | echte GNOME-Knöpfe, in die Shelf umgehängt – Kalender und Schnelleinstellungen erscheinen direkt über der Leiste |
 | Mauszeiger | eigener Xcursor-Satz, 52 Namen, 24/48 px (`cursor/ChromeOS/`) |
 | Hintergründe | drei eigene Motive, per Skript erzeugt (`tools/build-wallpapers.mjs`) |
+| Sperrbildschirm | Konto-Bild (96 px, rund, ohne Rahmen), Name in Weiß, Passwortfeld als dunkle Kapsel mit weißer Schrift, Benachrichtigungen als dunkle Karten; Hintergrund ist der weichgezeichnete Desktop-Hintergrund |
 | Schriften | Roboto und Roboto Mono (SIL OFL 1.1) liegen bei und werden mitinstalliert |
 
 Farben, Radien und Geometrie stehen in [`docs/design.md`](docs/design.md).
 Ein Screenshot des fertigen Zorin-Desktops kann hier nicht liegen – die
 Entwicklungsumgebung ist Windows; nach dem ersten Login gern ergänzen.
+
+### Sperrbildschirm gegen echtes ChromeOS geprüft
+
+Abgeglichen mit einem echten ChromeOS-Sperrbildschirm (1366 × 768):
+Konto-Bild, Name, Passwortfeld und Benachrichtigungen sitzen an derselben
+Stelle und haben dieselbe Form. GNOME Shell gibt allerdings keinen Rahmen
+her für
+
+- die Zeile „Shut down“ / „Sign out“ unten links,
+- Datum, Uhrzeit und Akku unten rechts – GNOME zeigt die Uhr groß in der
+  Mitte, solange niemand eine Taste drückt,
+- das Auge-Symbol im Feld und den runden Weiter-Pfeil daneben,
+- den Aufklapp-Pfeil am Namen zum Kontowechsel (GNOME hat dafür einen
+  Knopf unten rechts).
+
+Das sind feste Aufbauten von GNOME Shell, keine Farben; per CSS lassen sie
+sich nicht erzeugen. Gleich bleiben Schrift (Roboto), Farben, Formen und
+der weichgezeichnete Hintergrund.
 
 ---
 
@@ -154,6 +173,7 @@ eigene `~/.config/gtk-4.0/gtk.css` wird zurückgespielt.
 | Uhr rechts in der Shelf | Kalender |
 | Status-Icons rechts | Schnelleinstellungen (erscheinen über der Shelf) |
 | Rechtsklick auf Shelf-/Launcher-Icon | Menü: An Shelf anheften bzw. entfernen, Fenster schließen, App-Info |
+| Sperren (`Super+L`) | Chromebook-Sperrbildschirm mit Uhr, Konto und Passwortfeld |
 
 Arbeitsflächen bleiben über `Ctrl+Alt+↑/↓` erreichbar.
 
@@ -265,6 +285,10 @@ Grenze des Toolkits, keine offene Baustelle.
   mit `bun tools/build-cursors.mjs` neu erzeugen.
 - **GTK-4-Farben:** `theme/ChromeOS/gtk-4.0/gtk.css` (dieselben Tokens wie
   das Shell-Theme); danach `install.sh` erneut ausführen und neu anmelden.
+- **Sperrbildschirm:** Abschnitt „Sperrbildschirm“ in
+  `theme/ChromeOS/gnome-shell/gnome-shell.css` (Uhr, Konto-Kreis,
+  Passwortfeld, Hinweise, Benachrichtigungskarten). Sein Hintergrund ist der
+  Desktop-Hintergrund, den GNOME selbst weichzeichnet und abdunkelt.
 - **Launcher-Größe:** `PANEL_WIDTH` / `PANEL_MAX_HEIGHT` in
   `extension/chromeos-shell@baanaanek.github.io/launcher.js`.
 - **Shelf-Höhe/Radius:** `min-height` und `border-radius` von
@@ -314,7 +338,7 @@ cd ~/zorin-chromeos-theme && bash tests/run-all.sh
 
 | Harness | Prüfungen | Inhalt |
 | --- | --- | --- |
-| `tests/scripts/run.sh` | 101 | Probelauf, `--version`, `--check` vor und nach der Installation, echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 22 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, Lauf ohne GNOME-Werkzeuge |
+| `tests/scripts/run.sh` | 103 | Probelauf, `--version`, `--check` vor und nach der Installation, echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 22 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, Lauf ohne GNOME-Werkzeuge |
 | `tests/extension/lifecycle.mjs` | 50 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Tray, Suche, Lösch-Knopf, Seitenpunkte, Kontextmenüs, Theme, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
 
 Dazu drei Prüfungen ohne GNOME-Bezug:
@@ -340,9 +364,11 @@ das Theme nicht anfordert, oder Material, das nicht frei lizenzierbar ist.
 - **Material-Mauszeiger:** Googles Original ist nicht frei lizenzierbar.
   Beigelegt ist ein eigener, aus Vektorformen erzeugter Satz (MIT), der die
   Formensprache aufnimmt, aber keine Kopie ist.
-- **Login-/Sperrbildschirm (GDM), Boot-Splash (Plymouth), Systemklänge:**
-  liegen unter `/etc` bzw. `/usr/share` und bräuchten `sudo`. Das Theme
-  bleibt bei „ein Befehl, kein sudo, vollständig rückholbar“.
+- **Anmeldebildschirm vor der Anmeldung (GDM), Boot-Splash (Plymouth),
+  Systemklänge:** liegen unter `/etc` bzw. `/usr/share` und bräuchten
+  `sudo`. Der Sperrbildschirm *nach* der Anmeldung ist dagegen gestaltet
+  (siehe „Aussehen“). Das Theme bleibt bei „ein Befehl, kein sudo,
+  vollständig rückholbar“.
 - **libadwaita-Struktur:** GTK-4-Apps übernehmen Farben, Akzent, Radien und
   Schrift; ihr Layout (Sidebars, Karten, Headerbar-Aufbau) bleibt libadwaita.
 - **GNOME-Schnelleinstellungen** bleiben funktional GNOME (Kachelraster);
@@ -369,7 +395,7 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
 - **Mauszeiger-Satz** über `bun tools/build-cursors.mjs --check`: alle 52
   Namen vorhanden, jede Xcursor-Datei mit gültigem Header, zwei Bildern
   (24/48 px), passenden Hotspots und nicht-leeren Pixeldaten.
-- **Skripte end-to-end** über `tests/scripts/run.sh` – 101 Prüfungen, alle
+- **Skripte end-to-end** über `tests/scripts/run.sh` – 103 Prüfungen, alle
   grün: Dry-Run ohne Änderung; `--check` meldet vor der Installation
   Abweichungen (Exit 1) und danach „Alles wie erwartet“ (Exit 0); echter Lauf
   installiert Theme, Extension, Mauszeiger, Schriften, GTK-4-Farbdatei,
@@ -381,6 +407,8 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
   (`cursor-theme`, `cursor-size`, `titlebar-font`) und reaktiviert die zuvor
   deaktivierten Zorin-Leisten. Zusätzlich: Lauf ohne GNOME-Werkzeuge bricht
   nicht ab und räumt vollständig auf, inklusive der Nutzer-GTK-4-Datei.
+  Beide Läufe prüfen zusätzlich, dass das Shell-Theme die Regeln für den
+  Sperrbildschirm enthält.
 - **Extension-Lebenszyklus** über `tests/extension/lifecycle.mjs` mit den
   echten Quellen gegen ein gemocktes GNOME (St, Clutter, Main, Shell,
   PopupMenu) – 50 Prüfungen, alle grün, inklusive Lösch-Knopf im Suchfeld,

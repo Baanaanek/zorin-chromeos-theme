@@ -191,6 +191,13 @@ cursor_ok() {
         [ -f "$ICON_DIR/.chromeos-theme" ]
 }
 
+lock_css_ok() {
+    local css="$THEME_DIR/gnome-shell/gnome-shell.css"
+    [ -f "$css" ] &&
+        grep -qF 'user-widget.vertical' "$css" &&
+        grep -qF 'login-dialog-prompt-entry' "$css"
+}
+
 gtk4_ours() {
     grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null &&
         grep -q 'accent_bg_color #1a73e8' "$GTK4_FILE" 2>/dev/null
@@ -247,6 +254,11 @@ check 'install.sh startet ueber /usr/bin/env bash' \
     has_text "$REPO/install.sh" '#!/usr/bin/env bash'
 check 'Suchhelfer startet ueber /usr/bin/env python3' \
     has_text "$REPO/bin/chromeos-search-url" '#!/usr/bin/env python3'
+check 'Shell-Theme gestaltet den Sperrbildschirm' bash -c '
+    grep -q "user-widget.vertical" "$1" &&
+    grep -q "login-dialog-prompt-entry" "$1" &&
+    grep -q "unlock-dialog-notification-source" "$1"' \
+    _ "$REPO/theme/ChromeOS/gnome-shell/gnome-shell.css"
 
 # --- 1. Probelauf ----------------------------------------------------------
 run_stub install.sh --dry-run >"$OUT" 2>"$ERR"
@@ -286,6 +298,7 @@ check 'GTK-3-, GTK-4- und Shell-Theme liegen bereit' \
     bash -c '[ -f "$1/gtk-3.0/gtk.css" ] && [ -f "$1/gtk-4.0/gtk.css" ] && [ -f "$1/gnome-shell/gnome-shell.css" ]' \
     _ "$THEME_DIR"
 check 'Theme ist markiert' has_text "$THEME_DIR/.chromeos-theme" 'chromeos-theme'
+check 'installiertes Theme enthaelt die Sperrbildschirm-Regeln' lock_css_ok
 check 'Extension mit allen Dateien installiert' extension_files_ok
 check 'Suchhelfer installiert und ausfuehrbar' bash -c '[ -x "$1" ]' _ "$HELPER"
 check 'Hintergrundbild installiert' exists "$WALLPAPER"

@@ -6,7 +6,7 @@ erstes Argument (Standard: das Repo, in dem sie liegen).
 
 ```bash
 bash tests/run-all.sh                # beide Harnesses
-bash tests/scripts/run.sh            # nur Install/Uninstall (101 Prüfungen)
+bash tests/scripts/run.sh            # nur Install/Uninstall (103 Prüfungen)
 bun tests/extension/lifecycle.mjs    # nur Extension (50 Prüfungen)
 ```
 
@@ -32,6 +32,9 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
 - `--version` und `--help`, unbekannte Option endet mit 2.
 - `--check` vor der Installation: Exit 1, nennt die fehlenden Teile, legt
   nichts an und schreibt keine Einstellung.
+- Sperrbildschirm: das Repo-Theme und die installierte Kopie enthalten die
+  Regeln für Konto-Bild, Name, Passwortfeld und Benachrichtigungen
+  (`--check` meldet eine alte Kopie ohne diese Regeln als Abweichung).
 - echter Lauf: Theme, Extension, Mauszeiger-Satz, Schriften, GTK-4-Farbdatei,
   Suchhelfer und Hintergrund landen am dokumentierten Ort, 22 Einstellungen
   werden gesetzt (inkl. `cursor-theme`, `cursor-size`, `show-battery-percentage`,
@@ -57,7 +60,7 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
 - Lauf ohne GNOME-Werkzeuge: Installation und Deinstallation brechen nicht ab
   und räumen auch Cursor und GTK-4-Datei vollständig auf.
 
-Der Test gilt als bestanden, wenn `101/101` erscheint. `KEEP=1` behält das
+Der Test gilt als bestanden, wenn `103/103` erscheint. `KEEP=1` behält das
 temporäre Verzeichnis und gibt den Pfad aus.
 
 ## `extension/lifecycle.mjs` – Extension-Lebenszyklus

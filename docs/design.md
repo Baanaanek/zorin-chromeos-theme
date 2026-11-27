@@ -64,6 +64,21 @@ Schrift          "Roboto" (liegt im Repo bei), Monospace "Roboto Mono"
   GNOME-Panel-Buttons: Klick oeffnet Kalender bzw. Schnelleinstellungen,
   die dann direkt ueber der Shelf erscheinen.
 
+- Der Sperrbildschirm folgt dem echten ChromeOS (1366 x 768): Konto-Bild
+  96 px rund und ohne Rahmen, darunter der Name in 18 pt normaler Staerke,
+  darunter das Passwortfeld als dunkle Flaeche mit weisser Schrift.
+  Benachrichtigungen liegen als dunkle Karten darueber, kritische in Rot.
+  Gesetzt werden nur diese Abweichungen; Uhr, Knoepfe, Radius (8 px),
+  Innenabstand und Textfarben kommen aus dem GNOME-Theme. Den Hintergrund
+  liefert GNOME selbst (Desktop-Bild, weichgezeichnet und abgedunkelt),
+  deshalb braucht der Sperrbildschirm keine eigene Einstellung.
+- Nicht nachbaubar, weil GNOME Shell die Aufbauten festlegt: die Knoepfe
+  "Shut down"/"Sign out" unten links, Datum/Uhrzeit/Akku unten rechts, das
+  Auge-Symbol im Feld, der runde Weiter-Pfeil daneben und der
+  Aufklapp-Pfeil am Namen. GNOME zeigt stattdessen die grosse Uhr in der
+  Mitte, solange niemand eine Taste drueckt, und einen Kontowechsel-Knopf
+  unten rechts.
+
 ## Grenzen
 
 - GNOME-Schnelleinstellungen sind kein 1:1-Nachbau des ChromeOS-Trays
@@ -73,4 +88,6 @@ Schrift          "Roboto" (liegt im Repo bei), Monospace "Roboto Mono"
 - libadwaita-Apps uebernehmen ueber die Nutzer-CSS Farben, Akzent, Radien
   und Schrift, aber nicht ihr Layout (Sidebars, Karten, Headerbar-Aufbau).
 - Icon-Set und Google Sans sind nicht frei lizenzierbar (Roboto liegt bei,
-  Zorins Icons bleiben); GDM, Plymouth und Systemklaenge braeuchten sudo.
+  Zorins Icons bleiben); der GDM-Anmeldebildschirm vor der Anmeldung,
+  Plymouth und Systemklaenge braeuchten sudo. Der Sperrbildschirm nach der
+  Anmeldung ist gestaltet (Uhr, Konto, Passwortfeld).

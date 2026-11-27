@@ -641,3 +641,54 @@ stage {
   border: 2px solid #1a73e8;
   border-radius: 999px;
 }
+
+/* ------------------------------------------------------------------ */
+/* Sperrbildschirm (Screen Shield, GNOME 45-48)                        */
+/* Hier stehen nur die Abweichungen vom GNOME-Theme: Uhr, Knoepfe und  */
+/* Benachrichtigungs-Layout bleiben, wie GNOME sie zeichnet. Den       */
+/* Hintergrund liefert GNOME selbst (Desktop-Bild aus install.sh,      */
+/* weichgezeichnet und abgedunkelt).                                   */
+/* ------------------------------------------------------------------ */
+
+/* Konto-Bild: ChromeOS zeigt 96 px, rund und ohne Rahmen, GNOME 160 px.
+   Der Selektorpfad ist Absicht: GNOME setzt icon-size auf
+   .unlock-dialog .user-widget.vertical .user-icon; eine kuerzere Kette
+   wuerde die Regel verlieren. */
+.unlock-dialog .user-widget.vertical .user-icon {
+  icon-size: 96px;
+  border-radius: 999px;
+}
+
+/* Ohne Konto-Foto sitzt ein Personensymbol im Kreis. GNOME gibt ihm bei
+   160 px 32 px Innenabstand - bei 96 px bleibt davon kaum Bild uebrig. */
+.unlock-dialog .user-widget.vertical .user-icon StIcon {
+  padding: 12px;
+}
+
+/* Name: ChromeOS schreibt ihn in normaler Staerke, GNOME fett in 20 pt. */
+.unlock-dialog .user-widget.vertical .user-widget-label {
+  font-size: 18pt;
+  font-weight: 400;
+}
+
+/* Passwortfeld: dunkle Flaeche statt der hellen 10-%-Flaeche von GNOME.
+   Radius (8 px), Innenabstand und weisse Schrift kommen von GNOME; einen
+   Weiter-Pfeil neben dem Feld gibt die GNOME-Struktur nicht her. */
+.unlock-dialog .login-dialog-prompt-entry {
+  background-color: rgba(60, 64, 67, 0.72);
+}
+
+/* Benachrichtigungen: dunkle Karten statt heller 10-%-Karten, kritische
+   in Rot wie in ChromeOS. */
+.unlock-dialog-notifications-container .unlock-dialog-notification-source {
+  background-color: rgba(32, 33, 36, 0.62);
+}
+
+.unlock-dialog-notifications-container .unlock-dialog-notification-source.critical {
+  background-color: rgba(179, 38, 30, 0.78);
+}
+
+/* Fehlermeldung: GNOME zeichnet sie wie den Hinweistext in Weiss. */
+.unlock-dialog .login-dialog-message-warning {
+  color: #f28b82;
+}
