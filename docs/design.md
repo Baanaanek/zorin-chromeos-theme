@@ -156,6 +156,15 @@ Textfarbe ist festgeschrieben.
 - **GTK-3-Menues**: Menueleiste klassischer Programme, Popover-Menues
   (`modelbutton`) mit Akzent-Auswahl, Trennlinien und Combobox-Knoepfe.
 
+Alle Selektoren der beiden Shell-Dateien sind gegen die kompilierte
+`gnome-shell-light.css`/`gnome-shell-dark.css` aus gnome-shell 46.0 und die
+Style-Klassen der Shell-JS-Dateien abgeglichen. Namen, die GNOME 46 nicht
+mehr vergibt (`.app-well-app` → `.overview-tile`, `.app-grid-running-dot`,
+`.calendar-other-month`, `.polkit-dialog-user-label`), sind ersetzt; ohne
+Gegenstueck (`.window-capture`, `.window-clone-border`, `.level-bar`,
+`.message-button`, `.modal-dialog-button`, `.no-frequent-applications-label`)
+sind die Regeln entfernt.
+
 `tools/check-contrast.mjs` prueft 13 Oberflaechen- und 8 Umschalter-/
 Dialog-Paare je einmal in hell und dunkel; `tests/scripts/run.sh` prueft,
 dass die Regeln im Repo und im installierten Theme liegen.

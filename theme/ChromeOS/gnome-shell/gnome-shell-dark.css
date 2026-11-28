@@ -202,7 +202,7 @@ stage {
   color: #8ab4f8;
 }
 
-.calendar-other-month-day {
+.calendar-other-month {
   color: #9aa0a6;
 }
 
@@ -234,8 +234,7 @@ stage {
   background-color: #303134;
 }
 
-.notification-banner .notification-button,
-.message .message-button {
+.notification-banner .notification-button {
   background-color: rgba(138, 180, 248, 0.16);
   color: #8ab4f8;
 }
@@ -262,22 +261,22 @@ stage {
 /* ------------------------------------------------------------------ */
 /* App-Raster / Uebersicht                                             */
 /* ------------------------------------------------------------------ */
-.app-well-app:hover .overview-icon,
-.app-well-app:focus .overview-icon {
+/* GNOME 46 nennt die App-Kacheln .overview-tile (frueher .app-well-app). */
+.overview-tile:hover .overview-icon,
+.overview-tile:focus .overview-icon {
   background-color: rgba(232, 234, 237, 0.10);
 }
 
-.app-well-app:active .overview-icon,
-.app-well-app:selected .overview-icon {
+.overview-tile:active .overview-icon,
+.overview-tile:selected .overview-icon {
   background-color: rgba(232, 234, 237, 0.16);
 }
 
-.app-well-app-running-dot {
+.app-grid-running-dot {
   background-color: #8ab4f8;
 }
 
-.app-folder .overview-icon,
-.app-folder-icon {
+.app-folder .overview-icon {
   background-color: rgba(41, 42, 45, 0.85);
 }
 
@@ -315,8 +314,7 @@ stage {
   color: #9aa0a6;
 }
 
-.search-statustext,
-.no-frequent-applications-label {
+.search-statustext {
   color: #9aa0a6;
 }
 
@@ -377,11 +375,6 @@ stage {
   background-color: rgba(138, 180, 248, 0.36);
 }
 
-.window-capture,
-.window-clone-border {
-  border: 3px solid rgba(138, 180, 248, 0.80);
-}
-
 /* ------------------------------------------------------------------ */
 /* Fensterumschalter (Alt+Tab, Alt+^)                                  */
 /* ------------------------------------------------------------------ */
@@ -440,10 +433,6 @@ stage {
   background-color: rgba(232, 234, 237, 0.24);
 }
 
-.osd-window .level-bar {
-  background-color: #8ab4f8;
-}
-
 .osd-monitor-label {
   background-color: rgba(32, 33, 36, 0.92);
   color: #e8eaed;
@@ -478,11 +467,11 @@ stage {
 /* Uebrige Shell-Dialoge: Abmelden, Ausfuehren, Passphrase, Polkit,
    Audiogeraet. Dieselben Flaechen wie hell, Schrift eine Stufe heller. */
 .end-session-dialog .end-session-dialog-battery-warning,
-.dialog-list .dialog-list-title {
+.end-session-dialog .dialog-list-title {
   color: #fdd663;
 }
 
-.dialog-list .dialog-list-item .dialog-list-item-description {
+.dialog-list .dialog-list-box .dialog-list-item .dialog-list-item-description {
   color: #9aa0a6;
 }
 
@@ -699,21 +688,18 @@ stage {
 
 /* Knoepfe: im Dunkelmodus der helle Akzent mit dunkler Schrift, wie in
    den Dialogen. */
-.unlock-dialog .button,
-.unlock-dialog .modal-dialog-button {
+.unlock-dialog .button {
   background-color: #8ab4f8;
   color: #202124;
   border: none;
   border-radius: 999px;
 }
 
-.unlock-dialog .button:hover,
-.unlock-dialog .modal-dialog-button:hover {
+.unlock-dialog .button:hover {
   background-color: #aecbfa;
 }
 
-.unlock-dialog .button:focus,
-.unlock-dialog .modal-dialog-button:focus {
+.unlock-dialog .button:focus {
   background-color: #d2e3fc;
 }
 

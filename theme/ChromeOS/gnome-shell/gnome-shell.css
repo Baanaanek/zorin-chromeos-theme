@@ -294,7 +294,7 @@ stage {
   font-weight: 600;
 }
 
-.calendar-other-month-day {
+.calendar-other-month {
   color: #9aa0a6;
 }
 
@@ -331,8 +331,7 @@ stage {
   background-color: #f8f9fa;
 }
 
-.notification-banner .notification-button,
-.message .message-button {
+.notification-banner .notification-button {
   border-radius: 999px;
   padding: 4px 12px;
   background-color: rgba(26, 115, 232, 0.12);
@@ -370,27 +369,27 @@ stage {
 /* ------------------------------------------------------------------ */
 /* App-Raster / Uebersicht                                             */
 /* ------------------------------------------------------------------ */
-.app-grid {
+.icon-grid {
   padding: 8px;
 }
 
-.app-grid .app-well-app .overview-icon,
-.app-well-app .overview-icon {
+/* GNOME 46 nennt die App-Kacheln .overview-tile (frueher .app-well-app). */
+.overview-tile .overview-icon {
   border-radius: 16px;
   padding: 8px;
 }
 
-.app-well-app:hover .overview-icon,
-.app-well-app:focus .overview-icon {
+.overview-tile:hover .overview-icon,
+.overview-tile:focus .overview-icon {
   background-color: rgba(60, 64, 67, 0.10);
 }
 
-.app-well-app:active .overview-icon,
-.app-well-app:selected .overview-icon {
+.overview-tile:active .overview-icon,
+.overview-tile:selected .overview-icon {
   background-color: rgba(60, 64, 67, 0.16);
 }
 
-.app-well-app-running-dot {
+.app-grid-running-dot {
   width: 4px;
   height: 4px;
   border-radius: 999px;
@@ -398,8 +397,7 @@ stage {
   margin-bottom: 2px;
 }
 
-.app-folder .overview-icon,
-.app-folder-icon {
+.app-folder .overview-icon {
   border-radius: 18px;
   background-color: rgba(255, 255, 255, 0.85);
 }
@@ -450,8 +448,7 @@ stage {
   padding: 0 4px;
 }
 
-.search-statustext,
-.no-frequent-applications-label {
+.search-statustext {
   color: #5f6368;
 }
 
@@ -492,7 +489,7 @@ stage {
   padding: 0;
 }
 
-.dash-item-container .app-well-app .overview-icon,
+.dash-item-container .overview-tile .overview-icon,
 .dash-item-container .show-apps .overview-icon {
   border-radius: 12px;
   padding: 4px;
@@ -548,15 +545,6 @@ stage {
 
 .tile-preview.snap {
   background-color: rgba(26, 115, 232, 0.36);
-}
-
-/* Rahmen um das gerade gewaehlte Fenster in der Uebersicht. GNOME 45+
-   nennt ihn .window-capture, aeltere Fassungen .window-clone-border; beide
-   stehen hier, damit der Rahmen auf jeder unterstuetzten Version greift. */
-.window-capture,
-.window-clone-border {
-  border: 3px solid rgba(26, 115, 232, 0.80);
-  border-radius: 16px;
 }
 
 /* ------------------------------------------------------------------ */
@@ -652,11 +640,6 @@ stage {
   height: 6px;
 }
 
-.osd-window .level-bar {
-  background-color: #8ab4f8;
-  border-radius: 999px;
-}
-
 .osd-monitor-label {
   border-radius: 12px;
   background-color: rgba(32, 33, 36, 0.9);
@@ -701,7 +684,7 @@ stage {
   spacing: 12px;
 }
 
-.polkit-dialog-user-layout .username-label {
+.polkit-dialog-user-layout .polkit-dialog-user-label {
   font-size: 12pt;
   font-weight: 600;
 }
@@ -717,15 +700,16 @@ stage {
 
 /* Akku-Warnung beim Abmelden und die Ueberschrift der Fensterliste. */
 .end-session-dialog .end-session-dialog-battery-warning,
-.dialog-list .dialog-list-title {
+.end-session-dialog .dialog-list-title {
   color: #9a5300;
 }
 
-.dialog-list .dialog-list-item .dialog-list-item-title {
+/* GNOME verschachtelt Titel und Beschreibung ueber .dialog-list-box. */
+.dialog-list .dialog-list-box .dialog-list-item .dialog-list-item-title {
   font-weight: 600;
 }
 
-.dialog-list .dialog-list-item .dialog-list-item-description {
+.dialog-list .dialog-list-box .dialog-list-item .dialog-list-item-description {
   color: #5f6368;
 }
 
@@ -1072,21 +1056,18 @@ stage {
 
 /* Entsperren-/Weiter-Knopf: GNOME nutzt eine helle Flaeche, ChromeOS den
    Akzent. */
-.unlock-dialog .button,
-.unlock-dialog .modal-dialog-button {
+.unlock-dialog .button {
   background-color: #1a73e8;
   color: #ffffff;
   border: none;
   border-radius: 999px;
 }
 
-.unlock-dialog .button:hover,
-.unlock-dialog .modal-dialog-button:hover {
+.unlock-dialog .button:hover {
   background-color: #1b66c9;
 }
 
-.unlock-dialog .button:focus,
-.unlock-dialog .modal-dialog-button:focus {
+.unlock-dialog .button:focus {
   background-color: #174ea6;
 }
 
