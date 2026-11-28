@@ -30,6 +30,10 @@ CONFIG_DIR="$CONFIG_HOME/chromeos-theme"
 
 DRY_RUN=0
 SETTINGS_ONLY=0
+# Wird gesetzt, wenn die Sicherung noch gebraucht wird (Einstellungen liessen
+# sich nicht zurueckholen oder eine Datei wurde bewusst stehen gelassen).
+KEEP_STATE=0
+RESTORE_FAILED=0
 
 HAVE_GSETTINGS=0
 command -v gsettings >/dev/null 2>&1 && HAVE_GSETTINGS=1
@@ -81,6 +85,19 @@ remove_path() {
     fi
 }
 
+# install.sh legt einen fremden Ordner gleichen Namens als .bak beiseite.
+# Der gehoert dem Benutzer und kommt beim Deinstallieren zurueck.
+restore_backup_dir() {
+    local backup=$1 target=$2
+    [ -e "$backup" ] || return 0
+    if [ -e "$target" ] && [ "$DRY_RUN" -eq 0 ]; then
+        warn "Sicherung bleibt liegen: $backup (Ziel $target existiert bereits)."
+        return 0
+    fi
+    info "Hole $target aus der Sicherung zurueck"
+    run mv "$backup" "$target"
+}
+
 # Ohne Komponentenliste (aeltere Installation) wird alles entfernt.
 have_component() {
     [ -f "$COMPONENTS_FILE" ] || return 0
@@ -90,9 +107,40 @@ have_component() {
 # ---------------------------------------------------------------------------
 # Einstellungen
 # ---------------------------------------------------------------------------
+# Schluessel, den diese GNOME-Version nicht kennt (z. B. accent-color unter
+# GNOME 46): reset scheitert mit "No such key"/"existiert nicht". Das ist kein
+# Fehler - es gibt nichts zurueckzuholen. Alles andere ist ein echter Fehlschlag.
+reset_key() {
+    local schema=$1 key=$2 message
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '      wuerde: gsettings reset %s %s\n' "$schema" "$key"
+        return 0
+    fi
+    message=$(gsettings reset "$schema" "$key" 2>&1) && return 0
+    case "$(printf '%s' "$message" | tr 'A-Z' 'a-z')" in
+        *'no such key'*|*'does not exist'*|*'not found'*|*'existiert nicht'*|*'nicht vorhanden'*)
+            return 0 ;;
+    esac
+    warn "Nicht zuruecksetzbar: $schema $key"
+    RESTORE_FAILED=$((RESTORE_FAILED + 1))
+}
+
+restore_key() {
+    local schema=$1 key=$2 value=$3
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '      wuerde: gsettings set %s %s %s\n' "$schema" "$key" "$value"
+        return 0
+    fi
+    gsettings set "$schema" "$key" "$value" 2>/dev/null && return 0
+    warn "Nicht zuruecksetzbar: $schema $key"
+    RESTORE_FAILED=$((RESTORE_FAILED + 1))
+}
+
 restore_settings() {
     if [ "$HAVE_GSETTINGS" -eq 0 ]; then
         warn "gsettings nicht verfuegbar - Einstellungen koennen nicht zurueckgesetzt werden."
+        # Die Sicherung ist dann die einzige Kopie der alten Werte: nicht loeschen.
+        [ -s "$BACKUP_FILE" ] && KEEP_STATE=1
         return 0
     fi
     [ -f "$BACKUP_FILE" ] || { warn "Keine gesicherten Einstellungen gefunden."; return 0; }
@@ -102,22 +150,19 @@ restore_settings() {
         [ -n "${schema:-}" ] || continue
         if [ "$value" = '__UNSET__' ]; then
             # Vor der Installation nie gesetzt: kein Wert schreiben, nur reset.
-            if [ "$DRY_RUN" -eq 1 ]; then
-                printf '      wuerde: gsettings reset %s %s\n' "$schema" "$key"
-                continue
-            fi
-            gsettings reset "$schema" "$key" 2>/dev/null \
-                || warn "Nicht zuruecksetzbar: $schema $key"
+            reset_key "$schema" "$key"
             continue
         fi
-        if [ "$DRY_RUN" -eq 1 ]; then
-            printf '      wuerde: gsettings set %s %s %s\n' "$schema" "$key" "$value"
-            continue
-        fi
-        gsettings set "$schema" "$key" "$value" 2>/dev/null \
-            || warn "Nicht zuruecksetzbar: $schema $key"
+        restore_key "$schema" "$key" "$value"
     done < "$BACKUP_FILE"
-    [ "$DRY_RUN" -eq 0 ] && ok "Einstellungen wiederhergestellt"
+    if [ "$DRY_RUN" -eq 0 ]; then
+        if [ "$RESTORE_FAILED" -eq 0 ]; then
+            ok "Einstellungen wiederhergestellt"
+        else
+            warn "$RESTORE_FAILED Einstellung(en) nicht zurueckgesetzt - Sicherung bleibt liegen."
+            KEEP_STATE=1
+        fi
+    fi
     return 0
 }
 
@@ -134,13 +179,14 @@ reenable_conflicts() {
 }
 
 # ---------------------------------------------------------------------------
-# Extension aus der Aktivierungsliste nehmen - reines Bash, kein python3:
+# Extension aus den GNOME-Listen nehmen - reines Bash, kein python3:
 # '['a', 'b']' zerlegen, den Eintrag weglassen, wieder zusammensetzen.
+# Beide Listen: ein deaktivierter Eintrag bleibt sonst als Karteileiche in
+# dconf stehen, obwohl das Theme weg ist.
 # ---------------------------------------------------------------------------
-remove_from_enabled_list() {
-    [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
-    local current item out='' found=0
-    current=$(gsettings get org.gnome.shell enabled-extensions 2>/dev/null) || return 0
+strip_uuid_from_list() {
+    local key=$1 current item out='' found=0
+    current=$(gsettings get org.gnome.shell "$key" 2>/dev/null) || return 0
     case "$current" in
         *"$EXT_UUID"*) ;;
         *) return 0 ;;
@@ -160,12 +206,18 @@ remove_from_enabled_list() {
     done
     [ "$found" -eq 1 ] || return 0
     if [ "$DRY_RUN" -eq 1 ]; then
-        printf '      wuerde: gsettings set org.gnome.shell enabled-extensions [%s]\n' "$out"
+        printf '      wuerde: gsettings set org.gnome.shell %s [%s]\n' "$key" "$out"
     else
-        gsettings set org.gnome.shell enabled-extensions "[$out]" 2>/dev/null \
-            || warn "enabled-extensions nicht aenderbar."
+        gsettings set org.gnome.shell "$key" "[$out]" 2>/dev/null \
+            || warn "org.gnome.shell $key nicht aenderbar."
     fi
     return 0
+}
+
+remove_from_extension_lists() {
+    [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
+    strip_uuid_from_list enabled-extensions
+    strip_uuid_from_list disabled-extensions
 }
 
 # ---------------------------------------------------------------------------
@@ -179,14 +231,29 @@ if [ "$SETTINGS_ONLY" -eq 1 ]; then
     exit 0
 fi
 
+# Nichts installiert (zweiter Lauf, fremder Rechner): nichts anfassen und
+# auch keine Warnungen ueber fehlende Sicherungen produzieren.
+nothing_installed() {
+    [ ! -e "$THEME_DIR" ] && [ ! -e "$ALT_THEME_DIR" ] && [ ! -e "$EXT_DIR" ] \
+        && [ ! -e "$HELPER" ] && [ ! -e "$ICON_DIR" ] && [ ! -e "$FONT_DIR" ] \
+        && [ ! -e "$STATE_DIR" ] && [ ! -e "$CONFIG_DIR" ] \
+        && ! grep -q 'chromeos-theme' "$GTK4_FILE" 2>/dev/null
+}
+
+if nothing_installed; then
+    remove_from_extension_lists
+    info "Nichts zu entfernen - das Theme ist nicht installiert."
+    exit 0
+fi
+
 # --- 1. Extension ----------------------------------------------------------
 info "Extension deaktivieren"
 if command -v gnome-extensions >/dev/null 2>&1; then
     run gnome-extensions disable "$EXT_UUID" 2>/dev/null || true
 fi
 
-# Falls die Shell nicht erreichbar war: UUID aus der Aktivierungsliste nehmen.
-remove_from_enabled_list
+# Falls die Shell nicht erreichbar war: UUID aus beiden Listen nehmen.
+remove_from_extension_lists
 if have_component extension; then
     remove_path "$EXT_DIR"
 fi
@@ -197,8 +264,18 @@ if have_component theme; then
         warn "$THEME_DIR gehoert nicht zu diesem Theme - wird nicht geloescht."
     else
         remove_path "$THEME_DIR"
+        restore_backup_dir "$THEME_DIR.bak" "$THEME_DIR"
     fi
-    remove_path "$ALT_THEME_DIR"
+    # ~/.themes/ChromeOS ist nur bei alten Installationen unseres Themes zu
+    # finden; ein eigener Ordner gleichen Namens bleibt unangetastet.
+    if [ -d "$ALT_THEME_DIR" ]; then
+        if [ -f "$ALT_THEME_DIR/.chromeos-theme" ] \
+            || grep -q 'chromeos-theme' "$ALT_THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null; then
+            remove_path "$ALT_THEME_DIR"
+        else
+            warn "$ALT_THEME_DIR gehoert nicht zu diesem Theme - wird nicht geloescht."
+        fi
+    fi
 fi
 
 if have_component helper; then
@@ -215,6 +292,7 @@ if have_component cursor; then
         warn "$ICON_DIR gehoert nicht zu diesem Theme - wird nicht geloescht."
     else
         remove_path "$ICON_DIR"
+        restore_backup_dir "$ICON_DIR.bak" "$ICON_DIR"
     fi
 fi
 
@@ -236,6 +314,10 @@ if have_component gtk4; then
             fi
         else
             warn "$GTK4_FILE stammt nicht von diesem Theme - bleibt erhalten."
+            if [ -f "$GTK4_BACKUP" ]; then
+                warn "Die vorherige Datei liegt weiterhin in $GTK4_BACKUP."
+                KEEP_STATE=1
+            fi
         fi
     fi
     if [ "$DRY_RUN" -eq 0 ]; then
@@ -252,14 +334,27 @@ restore_settings
 reenable_conflicts
 
 # --- 5. Zustand loeschen ---------------------------------------------------
-remove_path "$STATE_DIR"
+if [ "$KEEP_STATE" -eq 1 ]; then
+    warn "Sicherung bleibt in $STATE_DIR - sie wird noch gebraucht."
+    warn "Spaeter erneut: uninstall.sh --settings-only"
+else
+    remove_path "$STATE_DIR"
+fi
 if [ "$DRY_RUN" -eq 0 ] && command -v fc-cache >/dev/null 2>&1; then
     fc-cache -f >/dev/null 2>&1 || true
 fi
 
+if [ "$DRY_RUN" -eq 1 ]; then
+    HEADLINE="Probelauf beendet - nichts wurde geaendert."
+elif [ "$KEEP_STATE" -eq 1 ]; then
+    HEADLINE="Dateien entfernt - die Sicherung in $STATE_DIR bleibt erhalten."
+else
+    HEADLINE="Deinstallation abgeschlossen."
+fi
+
 cat <<EOF
 
-$( [ "$DRY_RUN" -eq 1 ] && echo "Probelauf beendet - nichts wurde geaendert." || echo "Deinstallation abgeschlossen." )
+$HEADLINE
 
 Bitte einmal ab- und wieder anmelden, damit GNOME Shell ohne das Theme
 neu startet. Der Ordner dieses Repos kann danach geloescht werden.

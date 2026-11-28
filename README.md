@@ -149,7 +149,17 @@ entfernt würde. Entfernt werden nur die Teile, die tatsächlich
 installiert wurden (festgehalten in `~/.local/state/chromeos-theme/components.txt`):
 Extension, Theme-Ordner (nur mit Theme-Markierung), Mauszeiger-Satz,
 Schriften, GTK-4-Farbdatei, Suchhelfer, Konfiguration und
-der Zustandsordner.
+der Zustandsordner. Die UUID der Extension verschwindet dabei auch aus
+`enabled-extensions` **und** `disabled-extensions`. Hatte vor der
+Installation schon ein eigener Ordner `~/.local/share/themes/ChromeOS`
+(oder ein Mauszeiger-Satz gleichen Namens) existiert, holt die
+Deinstallation ihn aus der `.bak`-Sicherung zurück. Lässt sich ein Wert
+nicht zurücksetzen oder gehört die GTK-4-Datei inzwischen dem Nutzer,
+bleibt `~/.local/state/chromeos-theme` mit der Sicherung liegen und das
+Skript sagt, wo sie liegt.
+
+Auf einem Rechner ohne Installation ist der Lauf ein No-op: „Nichts zu
+entfernen“ und Exit 0, ohne Warnungen und ohne Einstellungen anzufassen.
 
 Nur die Einstellungen zurückholen, ohne Dateien anzufassen:
 
@@ -344,7 +354,7 @@ cd ~/zorin-chromeos-theme && bash tests/run-all.sh
 
 | Harness | Prüfungen | Inhalt |
 | --- | --- | --- |
-| `tests/scripts/run.sh` | 109 | Probelauf, `--version`, `--check` vor und nach der Installation (auch ohne dunkle Shell-CSS), echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 19 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, dunkle Shell-CSS, Lauf ohne GNOME-Werkzeuge |
+| `tests/scripts/run.sh` | 121 | Probelauf, `--version`, `--check` vor und nach der Installation (auch ohne dunkle Shell-CSS), echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 19 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, dunkle Shell-CSS, Lauf ohne GNOME-Werkzeuge |
 | `tests/extension/lifecycle.mjs` | 75 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Strut, Sperrbildschirm (Shelf und Strut aus dem Chrome, danach unveränderte Geometrie), laufende Apps, `should_show()`, Tray inklusive Tastaturbelegung, Aufnahme- und Freigabe-Indikator, Suche, Lösch-Knopf, klickbare Seitenpunkte, Tastaturnavigation samt Scrollen zum Fokus, Trenner in der Shelf, „Neues Fenster“ im Menü, Kontextmenüs, Theme, dunkle Shell-CSS, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
 
 Dazu zwei Prüfungen ohne GNOME-Bezug:
@@ -406,7 +416,7 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
 - **Mauszeiger-Satz** über `bun tools/build-cursors.mjs --check`: alle 52
   Namen vorhanden, jede Xcursor-Datei mit gültigem Header, zwei Bildern
   (24/48 px), passenden Hotspots und nicht-leeren Pixeldaten.
-- **Skripte end-to-end** über `tests/scripts/run.sh` – 109 Prüfungen, alle
+- **Skripte end-to-end** über `tests/scripts/run.sh` – 121 Prüfungen, alle
   grün: Dry-Run ohne Änderung; `--check` meldet vor der Installation
   Abweichungen (Exit 1) und danach „Alles wie erwartet“ (Exit 0); echter Lauf
   installiert Theme, Extension, Mauszeiger, Schriften, GTK-4-Farbdatei und

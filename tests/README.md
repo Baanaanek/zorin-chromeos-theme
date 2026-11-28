@@ -6,7 +6,7 @@ erstes Argument (Standard: das Repo, in dem sie liegen).
 
 ```bash
 bash tests/run-all.sh                # beide Harnesses
-bash tests/scripts/run.sh            # nur Install/Uninstall (109 Prüfungen)
+bash tests/scripts/run.sh            # nur Install/Uninstall (121 Prüfungen)
 bun tests/extension/lifecycle.mjs    # nur Extension (75 Prüfungen)
 ```
 
@@ -46,8 +46,15 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
 - `uninstall.sh`: entfernt alles, stellt alle 19 gesicherten Werte exakt
   wieder her, resettet Keys, die vorher nie gesetzt waren (der `dconf`-Stub
   macht den Unterschied zwischen „nie gesetzt“ und „auf Standard gesetzt“
-  sichtbar), spielt eine vorher eigene `~/.config/gtk-4.0/gtk.css` zurück und
+  sichtbar), spielt eine vorher eigene `~/.config/gtk-4.0/gtk.css` zurück,
+  nimmt die UUID aus `enabled-extensions` und `disabled-extensions` und
   reaktiviert die Zorin-Leisten.
+- fremde Ordner: eine `ChromeOS.bak` des Themes kommt zurück, ein eigener
+  Ordner `~/.themes/ChromeOS` bleibt stehen; eine fremd gewordene
+  GTK-4-Datei wird nicht überschrieben, die Sicherung bleibt liegen und der
+  Zustandsordner wird dann nicht gelöscht.
+- Lauf ohne Installation: „Nichts zu entfernen“, Exit 0, keine Warnung über
+  eine fehlende Sicherung.
 - Teilinstallation (`--no-cursor --no-gtk4`): der Mauszeiger bleibt weg, die
   eigene GTK-4-Datei unangetastet, `components.txt` nennt nur die
   installierten Teile.
@@ -58,7 +65,7 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
 - Lauf ohne GNOME-Werkzeuge: Installation und Deinstallation brechen nicht ab
   und räumen auch Cursor und GTK-4-Datei vollständig auf.
 
-Der Test gilt als bestanden, wenn `109/109` erscheint. `KEEP=1` behält das
+Der Test gilt als bestanden, wenn `121/121` erscheint. `KEEP=1` behält das
 temporäre Verzeichnis und gibt den Pfad aus.
 
 ## `extension/lifecycle.mjs` – Extension-Lebenszyklus

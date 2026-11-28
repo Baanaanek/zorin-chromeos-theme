@@ -133,8 +133,10 @@ settings_restored() {
     local schema key value got
     while IFS=$'\t' read -r schema key value; do
         [ -n "$schema" ] || continue
-        if [ "$schema" = 'org.gnome.shell' ] && [ "$key" = 'enabled-extensions' ]; then
-            continue
+        if [ "$schema" = 'org.gnome.shell' ]; then
+            case "$key" in
+                enabled-extensions|disabled-extensions) continue ;;
+            esac
         fi
         got=$(awk -F'\t' -v s="$schema" -v k="$key" \
             '$1==s && $2==k {print $3; exit}' "$STUB_STATE/gsettings.tsv")
@@ -189,12 +191,24 @@ gtk4_ours() {
 
 no_extra_keys() {
     local extra
+    # Erweiterungslisten verwaltet GNOME selbst; geprueft wird nur, dass keine
+    # fremden Schluessel dazukommen.
     extra=$(comm -13 \
-        <(awk -F'\t' '!($1 == "org.gnome.shell" && $2 == "enabled-extensions")' \
+        <(awk -F'\t' '!($1 == "org.gnome.shell" && $2 ~ /^(enabled|disabled)-extensions$/)' \
             "$TMP/seed.tsv" | sort) \
-        <(awk -F'\t' '!($1 == "org.gnome.shell" && $2 == "enabled-extensions")' \
+        <(awk -F'\t' '!($1 == "org.gnome.shell" && $2 ~ /^(enabled|disabled)-extensions$/)' \
             "$STUB_STATE/gsettings.tsv" | sort))
     [ -z "$extra" ]
+}
+
+# Setzt einen Wert ueber den gsettings-Stub (wie GNOME es taete).
+gset_write() {
+    STUB_STATE="$STUB_STATE" PATH="$STUB_PATH" gsettings set "$1" "$2" "$3"
+}
+
+uuid_gone() {
+    ! gget org.gnome.shell enabled-extensions | grep -qF "$UUID" &&
+        ! gget org.gnome.shell disabled-extensions | grep -qF "$UUID"
 }
 
 unset_after_uninstall() {
@@ -395,6 +409,9 @@ check 'Uninstall-Dry-Run laesst Cursor und GTK-4 stehen' \
     _ "$ICON_DIR" "$GTK4_FILE"
 
 # --- 7. Echte Deinstallation ----------------------------------------------
+# GNOME legt eine deaktivierte Erweiterung in disabled-extensions ab; nach der
+# Deinstallation darf die UUID in keiner der beiden Listen stehen bleiben.
+gset_write org.gnome.shell disabled-extensions "['$UUID']"
 run_stub uninstall.sh >"$OUT" 2>"$ERR"
 check 'Deinstallation endet mit 0' eq "$?" 0
 check 'Theme-Ordner entfernt' missing "$THEME_DIR"
@@ -408,6 +425,7 @@ check 'alle 19 Einstellungen exakt wiederhergestellt' settings_restored
 check 'vorher nie gesetzte Keys bleiben ungesetzt' unset_after_uninstall
 check 'keine zusaetzlichen Keys in der Datenbank' no_extra_keys
 check 'GTK-4-Datei des Nutzers unveraendert zurueck' has_text "$GTK4_FILE" 'eigene Anpassung'
+check 'UUID steht in keiner Erweiterungsliste mehr' uuid_gone
 check 'Zorin-Leisten wieder aktiv, UUID aus der Liste' bash -c '
     grep -qxF "zorin-dash@zorinos.com" "$1" &&
     grep -qxF "zorin-menu@zorinos.com" "$1" &&
@@ -455,6 +473,33 @@ check 'zweite Deinstallation entfernt den Rest' \
 check 'nie installierter Cursor bleibt unberuehrt' missing "$ICON_DIR"
 check 'GTK-4-Datei des Nutzers bleibt beim zweiten Lauf heil' \
     has_text "$GTK4_FILE" 'eigene Anpassung'
+
+# --- 10. Fremde Ordner, liegengebliebene Sicherung, leerer Lauf ------------
+run_stub install.sh >"$OUT" 2>"$ERR"
+check 'Neuinstallation fuer den Sicherungsfall endet mit 0' eq "$?" 0
+mkdir -p "$THEME_DIR.bak/gnome-shell" "$TEST_HOME/.themes/$THEME_NAME/gnome-shell"
+printf 'fremdes Theme\n' > "$THEME_DIR.bak/gnome-shell/gnome-shell.css"
+printf 'eigenes Theme\n' > "$TEST_HOME/.themes/$THEME_NAME/gnome-shell/gnome-shell.css"
+printf '/* ersetzt */\n' > "$GTK4_FILE"
+run_stub uninstall.sh >"$OUT" 2>"$ERR"
+check 'Deinstallation mit fremden Ordnern endet mit 0' eq "$?" 0
+check 'fremdes Theme kommt aus der Sicherung zurueck' \
+    has_text "$THEME_DIR/gnome-shell/gnome-shell.css" 'fremdes Theme'
+check 'eigener Ordner in ~/.themes bleibt erhalten' \
+    has_text "$TEST_HOME/.themes/$THEME_NAME/gnome-shell/gnome-shell.css" 'eigenes Theme'
+check 'fremde GTK-4-Datei bleibt stehen' has_text "$GTK4_FILE" 'ersetzt'
+check 'GTK-4-Sicherung bleibt liegen' exists "$STATE_DIR/gtk-4.0-gtk.css.before"
+check 'Zustand bleibt bei offener Sicherung' exists "$STATE_DIR"
+check 'Deinstallation nennt die liegengebliebene Sicherung' \
+    has_text "$ERR" 'gtk-4.0-gtk.css.before'
+
+rm -rf "$THEME_DIR" "$STATE_DIR" "$TEST_HOME/.themes"
+run_stub uninstall.sh >"$OUT" 2>"$ERR"
+check 'Lauf ohne Installation endet mit 0' eq "$?" 0
+check 'Lauf ohne Installation meldet "Nichts zu entfernen"' \
+    has_text "$OUT" 'Nichts zu entfernen'
+check 'Lauf ohne Installation warnt nicht ueber fehlende Sicherung' \
+    bash -c '! grep -qF "Keine gesicherten Einstellungen" "$1"' _ "$ERR"
 
 # --- Ergebnis --------------------------------------------------------------
 printf '\n%s/%s Pruefungen bestanden\n' "$PASSED" "$TOTAL"
