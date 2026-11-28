@@ -250,6 +250,56 @@ variant_list() {
     printf '%s]' "$out"
 }
 
+# String-Liste aus gsettings (GVariant "['a', 'b']") zeilenweise ausgeben.
+gv_items() {
+    gsettings get "$1" "$2" 2>/dev/null \
+        | sed -e 's/^@[a-z]* //' -e 's/[][]//g' -e "s/'//g" -e 's/,/\n/g' \
+        | sed '/^[[:space:]]*$/d'
+}
+
+# Wert in eine gsettings-String-Liste aufnehmen, ohne Dopplung.
+set_list_add() {
+    local schema=$1 key=$2 value=$3 item
+    local items=()
+    [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '      wuerde: gsettings set %s %s (+ %s)\n' "$schema" "$key" "$value"
+        return 0
+    fi
+    while IFS= read -r item; do
+        [ -z "$item" ] && continue
+        [ "$item" = "$value" ] && continue
+        items+=("$item")
+    done < <(gv_items "$schema" "$key")
+    items+=("$value")
+    backup_key "$schema" "$key"
+    gsettings set "$schema" "$key" "$(variant_list "${items[@]}")" 2>/dev/null \
+        || warn "Schluessel nicht setzbar: $schema $key"
+}
+
+# Wert aus einer gsettings-String-Liste entfernen (nur wenn er drin steht).
+set_list_remove() {
+    local schema=$1 key=$2 value=$3 item
+    local items=() found=0
+    [ "$HAVE_GSETTINGS" -eq 1 ] || return 0
+    if [ "$DRY_RUN" -eq 1 ]; then
+        printf '      wuerde: gsettings set %s %s (- %s)\n' "$schema" "$key" "$value"
+        return 0
+    fi
+    while IFS= read -r item; do
+        [ -z "$item" ] && continue
+        if [ "$item" = "$value" ]; then
+            found=1
+            continue
+        fi
+        items+=("$item")
+    done < <(gv_items "$schema" "$key")
+    [ "$found" -eq 1 ] || return 0
+    backup_key "$schema" "$key"
+    gsettings set "$schema" "$key" "$(variant_list "${items[@]}")" 2>/dev/null \
+        || warn "Schluessel nicht setzbar: $schema $key"
+}
+
 # --- 1. Dateien ------------------------------------------------------------
 install_files() {
     info "Theme nach $THEME_DIR"
@@ -428,21 +478,39 @@ extension_available() {
 }
 
 disable_conflicts() {
-    [ "$HAVE_GNOME_EXT" -eq 1 ] || return 0
-    local uuid
-    for uuid in $(gnome-extensions list --enabled 2>/dev/null); do
+    local uuid candidates="" seen=" "
+
+    # Kandidaten: was die laufende Shell als aktiv meldet und was in der
+    # Startliste steht. Ohne laufende Shell ist die Liste die einzige Quelle -
+    # sonst waeren Zorins Leisten nach dem naechsten Anmelden wieder da.
+    if [ "$HAVE_GNOME_EXT" -eq 1 ]; then
+        candidates=$(gnome-extensions list --enabled 2>/dev/null)
+    fi
+    if [ "$HAVE_GSETTINGS" -eq 1 ]; then
+        candidates="$candidates
+$(gv_items org.gnome.shell enabled-extensions)"
+    fi
+
+    for uuid in $candidates; do
         [ "$uuid" = "$EXT_UUID" ] && continue
         printf '%s\n' "$uuid" | grep -qiE "$EXT_CONFLICT_REGEX" || continue
+        case "$seen" in *" $uuid "*) continue ;; esac
+        seen="$seen$uuid "
 
         info "Deaktiviere kollidierende Leiste: $uuid"
         if [ "$DRY_RUN" -eq 1 ]; then
             printf '      wuerde: gnome-extensions disable %s\n' "$uuid"
-        elif gnome-extensions disable "$uuid" 2>/dev/null; then
-            grep -qxF "$uuid" "$DISABLED_FILE" 2>/dev/null || printf '%s\n' "$uuid" >> "$DISABLED_FILE"
-            ok "$uuid deaktiviert"
-        else
-            warn "$uuid liess sich nicht deaktivieren"
+            printf '      wuerde: gsettings set org.gnome.shell enabled-extensions (- %s)\n' "$uuid"
+            continue
         fi
+        if [ "$HAVE_GNOME_EXT" -eq 1 ] && gnome-extensions disable "$uuid" 2>/dev/null; then
+            ok "$uuid deaktiviert"
+        fi
+        # Auch fuer die naechste Sitzung: raus aus enabled, rein in disabled.
+        set_list_remove org.gnome.shell enabled-extensions "$uuid"
+        set_list_add org.gnome.shell disabled-extensions "$uuid"
+        grep -qxF "$uuid" "$DISABLED_FILE" 2>/dev/null \
+            || printf '%s\n' "$uuid" >> "$DISABLED_FILE"
     done
 }
 
@@ -450,8 +518,21 @@ activate_extension() {
     if [ -n "$SHELL_MAJOR" ] && [ "$SHELL_MAJOR" -lt 45 ]; then
         return 0
     fi
+
+    # Startliste: GNOME laedt beim Anmelden alles aus enabled-extensions.
+    # `gnome-extensions enable` wirkt nur, wenn die laufende Shell die UUID
+    # schon kennt - direkt nach dem Kopieren tut sie das nicht. Ohne diesen
+    # Eintrag bleibt die Erweiterung nach dem Neustart aus (nacktes GNOME).
+    if [ "$HAVE_GSETTINGS" -eq 1 ]; then
+        set_list_remove org.gnome.shell disabled-extensions "$EXT_UUID"
+        set_list_add org.gnome.shell enabled-extensions "$EXT_UUID"
+        if [ "$DRY_RUN" -eq 0 ]; then
+            ok "Extension $EXT_UUID steht in der Startliste (aktiv nach dem Anmelden)"
+        fi
+    fi
+
     if [ "$HAVE_GNOME_EXT" -eq 0 ]; then
-        skip "gnome-extensions nicht gefunden - Extension wurde kopiert, aber nicht aktiviert."
+        skip "gnome-extensions nicht gefunden - die Startliste aktiviert die Extension beim naechsten Anmelden."
         return 0
     fi
     if [ "$DRY_RUN" -eq 1 ]; then

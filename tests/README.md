@@ -35,19 +35,21 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
   Regeln für Konto-Bild, Name, Passwortfeld und Benachrichtigungen
   (`--check` meldet eine alte Kopie ohne diese Regeln als Abweichung).
 - echter Lauf: Theme, Extension, Mauszeiger-Satz, Schriften, GTK-4-Farbdatei
-  und Suchhelfer landen am dokumentierten Ort, 19 Einstellungen werden gesetzt
+  und Suchhelfer landen am dokumentierten Ort, 21 Einstellungen werden gesetzt
   (inkl. `cursor-theme`, `cursor-size`, `show-battery-percentage`, drei
   Schrift- und drei DING-Keys), Zorin-Leisten deaktiviert, die Extension
-  aktiviert. Die installierten Teile stehen in `components.txt`.
+  aktiviert und in `enabled-extensions` eingetragen (genau einmal); die
+  Zorin-Leisten stehen in `disabled-extensions`. Die installierten Teile
+  stehen in `components.txt`.
 - `--check` nach der Installation: Exit 0 und „Alles wie erwartet“.
-- zweiter Lauf: idempotent, die Sicherung bleibt bei 19 Einträgen.
+- zweiter Lauf: idempotent, die Sicherung bleibt bei 21 Einträgen.
 - alte Ablage: eine von diesem Theme stammende Kopie in `~/.themes/ChromeOS`
   (frühere Fassung) wird entfernt und gemeldet, damit Zorin das Theme nicht
   doppelt anbietet; eine fremde Kopie gleichen Namens bleibt liegen und wird
   nur gemeldet.
 - `--activate`: setzt nur Einstellungen und lässt die Dateien unverändert.
 - `uninstall.sh --dry-run`: entfernt nichts.
-- `uninstall.sh`: entfernt alles, stellt alle 19 gesicherten Werte exakt
+- `uninstall.sh`: entfernt alles, stellt alle 21 gesicherten Werte exakt
   wieder her, resettet Keys, die vorher nie gesetzt waren (der `dconf`-Stub
   macht den Unterschied zwischen „nie gesetzt“ und „auf Standard gesetzt“
   sichtbar), spielt eine vorher eigene `~/.config/gtk-4.0/gtk.css` zurück,

@@ -373,8 +373,8 @@ check 'Theme ist markiert' has_text "$THEME_DIR/.chromeos-theme" 'chromeos-theme
 check 'installiertes Theme enthaelt die Sperrbildschirm-Regeln' lock_css_ok
 check 'Extension mit allen Dateien installiert' extension_files_ok
 check 'Suchhelfer installiert und ausfuehrbar' bash -c '[ -x "$1" ]' _ "$HELPER"
-check 'Sicherung enthaelt 19 Einstellungen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 19 ]' _ "$BACKUP_FILE"
+check 'Sicherung enthaelt 21 Einstellungen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 21 ]' _ "$BACKUP_FILE"
 check 'installierte Teile festgehalten' bash -c '
     for part in theme extension helper settings cursor gtk4 fonts; do
         grep -qxF "$part" "$1" || exit 1
@@ -407,6 +407,15 @@ check 'Zorin-Leisten wurden deaktiviert' bash -c '
     grep -qxF "zorin-dash@zorinos.com" "$1" && grep -qxF "zorin-menu@zorinos.com" "$1"' \
     _ "$STUB_STATE/ext-disable.log"
 check 'Extension wurde aktiviert' line_is "$STUB_STATE/ext-enabled.txt" "$UUID"
+check 'Extension steht in der Startliste (greift nach dem Neustart)' \
+    bash -c 'printf "%s" "$1" | grep -qF "$2"' _ \
+    "$(gget org.gnome.shell enabled-extensions)" "$UUID"
+check 'Startliste nennt die UUID genau einmal' \
+    eq "$(gget org.gnome.shell enabled-extensions | grep -oF "$UUID" | wc -l | tr -d ' ')" 1
+check 'Zorin-Leisten stehen in disabled-extensions' \
+    bash -c 'printf "%s" "$1" | grep -qF "zorin-dash@zorinos.com" &&
+             printf "%s" "$1" | grep -qF "zorin-menu@zorinos.com"' _ \
+    "$(gget org.gnome.shell disabled-extensions)"
 check 'Installation meldet "Fertig."' has_text "$OUT" 'Fertig.'
 run_stub install.sh --check >"$OUT" 2>"$ERR"
 check '--check ist nach der Installation gruen' eq "$?" 0
@@ -421,8 +430,8 @@ mv "$THEME_DIR/gnome-shell/dark.css.bak" "$DARK_CSS"
 # --- 4. Zweiter Lauf (idempotent) -----------------------------------------
 run_stub install.sh >"$OUT" 2>"$ERR"
 check 'zweiter Lauf endet mit 0' eq "$?" 0
-check 'Sicherung bleibt bei 19 Eintraegen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 19 ]' _ "$BACKUP_FILE"
+check 'Sicherung bleibt bei 21 Eintraegen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 21 ]' _ "$BACKUP_FILE"
 check 'kein Theme-Backup und keine Dopplung' \
     bash -c '[ -d "$1" ] && [ ! -e "$1.bak" ]' _ "$THEME_DIR"
 
@@ -470,7 +479,7 @@ check 'Extension und Helfer entfernt' \
 check 'Zustandsordner entfernt' missing "$STATE_DIR"
 check 'Mauszeiger-Satz entfernt' missing "$ICON_DIR"
 check 'Schriften entfernt' missing "$FONT_DIR"
-check 'alle 19 Einstellungen exakt wiederhergestellt' settings_restored
+check 'alle 21 Einstellungen exakt wiederhergestellt' settings_restored
 check 'vorher nie gesetzte Keys bleiben ungesetzt' unset_after_uninstall
 check 'keine zusaetzlichen Keys in der Datenbank' no_extra_keys
 check 'GTK-4-Datei des Nutzers unveraendert zurueck' has_text "$GTK4_FILE" 'eigene Anpassung'
