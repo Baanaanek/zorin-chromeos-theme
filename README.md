@@ -75,25 +75,29 @@ der weichgezeichnete Hintergrund.
 ### Ohne git (ZIP)
 
 `git` muss nicht installiert sein. Lade `zorin-chromeos-theme.zip` aus den
-[Releases](https://github.com/Baanaanek/zorin-chromeos-theme/releases/latest),
-entpacke es und starte die Installation im entpackten Ordner:
+[Releases](https://github.com/Baanaanek/zorin-chromeos-theme/releases/latest)
+und entpacke es; im Archiv liegt **ein** Ordner `zorin-chromeos-theme/`.
+Darin startet die Installation:
 
 ```bash
-cd ~/Downloads/zorin-chromeos-theme && bash install.sh
+cd ~/Downloads/zorin-chromeos-theme   # Pfad je nach Entpackort
+bash install.sh
 ```
 
-Dasselbe in einem Rutsch (`curl` und `unzip` sind bei Zorin OS dabei):
+Dasselbe in einem Rutsch (`curl` und `unzip` sind bei Zorin OS dabei) – das
+Archiv enthält den Ordner bereits, deshalb reicht `-d ~`:
 
 ```bash
 curl -L -o /tmp/theme.zip \
   https://github.com/Baanaanek/zorin-chromeos-theme/releases/latest/download/zorin-chromeos-theme.zip
-unzip -q /tmp/theme.zip -d ~/zorin-chromeos-theme && bash ~/zorin-chromeos-theme/install.sh
+unzip -q /tmp/theme.zip -d ~ && bash ~/zorin-chromeos-theme/install.sh
 ```
 
 Gibt es noch kein Release, tut es GitHubs Quell-Archiv: auf der Repo-Seite
 **Code → Download ZIP** (oder `.../archive/refs/heads/main.zip`); der Ordner
 heißt dann `zorin-chromeos-theme-main`. Das Archiv enthält alles, was die
-Skripte brauchen – fremde Grafiken sind ohnehin nicht dabei.
+Skripte brauchen – fremde Grafiken sind ohnehin nicht dabei; Tests und
+CI-Dateien liegen nur im Repo.
 
 Die Deinstallation braucht weder git noch das Repo: `uninstall.sh` arbeitet
 nur mit den Dateien im Benutzer-Home.
