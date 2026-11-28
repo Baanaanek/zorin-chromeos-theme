@@ -41,6 +41,10 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
   aktiviert. Die installierten Teile stehen in `components.txt`.
 - `--check` nach der Installation: Exit 0 und „Alles wie erwartet“.
 - zweiter Lauf: idempotent, die Sicherung bleibt bei 19 Einträgen.
+- alte Ablage: eine von diesem Theme stammende Kopie in `~/.themes/ChromeOS`
+  (frühere Fassung) wird entfernt und gemeldet, damit Zorin das Theme nicht
+  doppelt anbietet; eine fremde Kopie gleichen Namens bleibt liegen und wird
+  nur gemeldet.
 - `--activate`: setzt nur Einstellungen und lässt die Dateien unverändert.
 - `uninstall.sh --dry-run`: entfernt nichts.
 - `uninstall.sh`: entfernt alles, stellt alle 19 gesicherten Werte exakt

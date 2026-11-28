@@ -21,6 +21,7 @@ DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 THEME_DIR="$DATA_HOME/themes/$THEME_NAME"
+LEGACY_THEME_DIR="$HOME/.themes/$THEME_NAME"
 EXT_DIR="$DATA_HOME/gnome-shell/extensions/$EXT_UUID"
 BIN_DIR="$HOME/.local/bin"
 STATE_DIR="$STATE_HOME/chromeos-theme"
@@ -225,6 +226,20 @@ pick_desktop() {
     return 1
 }
 
+# Gehoert ein Ordner zu diesem Theme? Die Markierungsdatei fehlt, wenn jemand
+# den Ordner kopiert oder die Oberflaeche ihn neu angelegt hat; dann entscheidet
+# der Kommentar in der CSS. Nur so laesst sich eine vorhandene Kopie
+# ueberschreiben statt sie als fremd zu sichern.
+theme_is_ours() {
+    local dir=$1
+    [ -f "$dir/.chromeos-theme" ] && return 0
+    grep -qs 'chromeos-theme' \
+        "$dir/gnome-shell/gnome-shell.css" \
+        "$dir/gnome-shell/gnome-shell-dark.css" \
+        "$dir/gtk-3.0/gtk.css" \
+        "$dir/gtk.css" 2>/dev/null
+}
+
 variant_list() {
     local out='[' first=1 item
     for item in "$@"; do
@@ -238,8 +253,26 @@ variant_list() {
 # --- 1. Dateien ------------------------------------------------------------
 install_files() {
     info "Theme nach $THEME_DIR"
+
+    # Alte Ablageorte: fruehere Fassungen schrieben nach ~/.themes, ein
+    # manueller Kopierversuch landet in /usr/share/themes. Zorin listet dann
+    # zweimal "ChromeOS", und ueber die Oberflaeche laesst sich keine der
+    # Kopien sauber ersetzen. Was von diesem Theme stammt, raeumen wir weg.
+    if [ "$LEGACY_THEME_DIR" != "$THEME_DIR" ] && [ -d "$LEGACY_THEME_DIR" ]; then
+        if theme_is_ours "$LEGACY_THEME_DIR"; then
+            run rm -rf "$LEGACY_THEME_DIR"
+            [ "$DRY_RUN" -eq 1 ] || ok "alte Kopie entfernt: $LEGACY_THEME_DIR"
+        else
+            warn "$LEGACY_THEME_DIR gehoert nicht zu diesem Theme - bleibt liegen."
+        fi
+    fi
+    if [ -d "/usr/share/themes/$THEME_NAME" ]; then
+        warn "/usr/share/themes/$THEME_NAME liegt zusaetzlich im Systemordner - Zorin zeigt das Theme doppelt."
+        warn "Entfernen mit: sudo rm -rf /usr/share/themes/$THEME_NAME"
+    fi
+
     if [ -d "$THEME_DIR" ]; then
-        if [ -f "$THEME_DIR/.chromeos-theme" ]; then
+        if theme_is_ours "$THEME_DIR"; then
             run rm -rf "$THEME_DIR"
         else
             warn "Vorhandenes Theme ohne Markierung - wird gesichert: $THEME_DIR.bak"

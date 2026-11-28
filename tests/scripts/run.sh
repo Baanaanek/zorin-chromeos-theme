@@ -426,6 +426,22 @@ check 'Sicherung bleibt bei 19 Eintraegen' \
 check 'kein Theme-Backup und keine Dopplung' \
     bash -c '[ -d "$1" ] && [ ! -e "$1.bak" ]' _ "$THEME_DIR"
 
+# --- 4b. Alte Kopie in ~/.themes (Theme sonst doppelt in der Auswahl) ------
+LEGACY_THEME="$TEST_HOME/.themes/$THEME_NAME"
+mkdir -p "$LEGACY_THEME/gnome-shell"
+printf '/* chromeos-theme, alte Ablage */\n' > "$LEGACY_THEME/gnome-shell/gnome-shell.css"
+run_stub install.sh >"$OUT" 2>"$ERR"
+check 'Installation mit alter Kopie endet mit 0' eq "$?" 0
+check 'alte Kopie in ~/.themes wird entfernt' missing "$LEGACY_THEME"
+check 'Installation nennt die entfernte Kopie' has_text "$OUT" 'alte Kopie entfernt'
+mkdir -p "$LEGACY_THEME/gnome-shell"
+printf 'eigenes Theme\n' > "$LEGACY_THEME/gnome-shell/gnome-shell.css"
+run_stub install.sh >"$OUT" 2>"$ERR"
+check 'fremde Kopie in ~/.themes bleibt liegen' \
+    has_text "$LEGACY_THEME/gnome-shell/gnome-shell.css" 'eigenes Theme'
+check 'Installation warnt vor der fremden Kopie' has_text "$ERR" 'gehoert nicht zu diesem Theme'
+rm -rf "$TEST_HOME/.themes"
+
 # --- 5. --activate ---------------------------------------------------------
 GTK_SUM_BEFORE=$(cksum "$THEME_DIR/gtk-3.0/gtk.css" | awk '{print $1}')
 run_stub install.sh --activate >"$OUT" 2>"$ERR"
