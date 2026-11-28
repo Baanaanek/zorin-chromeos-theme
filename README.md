@@ -72,13 +72,41 @@ der weichgezeichnete Hintergrund.
 
 ## Installation
 
+### Ohne git (ZIP)
+
+`git` muss nicht installiert sein. Lade `zorin-chromeos-theme.zip` aus den
+[Releases](https://github.com/Baanaanek/zorin-chromeos-theme/releases/latest),
+entpacke es und starte die Installation im entpackten Ordner:
+
+```bash
+cd ~/Downloads/zorin-chromeos-theme && bash install.sh
+```
+
+Dasselbe in einem Rutsch (`curl` und `unzip` sind bei Zorin OS dabei):
+
+```bash
+curl -L -o /tmp/theme.zip \
+  https://github.com/Baanaanek/zorin-chromeos-theme/releases/latest/download/zorin-chromeos-theme.zip
+unzip -q /tmp/theme.zip -d ~/zorin-chromeos-theme && bash ~/zorin-chromeos-theme/install.sh
+```
+
+Gibt es noch kein Release, tut es GitHubs Quell-Archiv: auf der Repo-Seite
+**Code → Download ZIP** (oder `.../archive/refs/heads/main.zip`); der Ordner
+heißt dann `zorin-chromeos-theme-main`. Das Archiv enthält alles, was die
+Skripte brauchen – fremde Grafiken sind ohnehin nicht dabei.
+
+Die Deinstallation braucht weder git noch das Repo: `uninstall.sh` arbeitet
+nur mit den Dateien im Benutzer-Home.
+
+### Mit git
+
 Ein Befehl – Repo holen und installieren:
 
 ```bash
 git clone https://github.com/Baanaanek/zorin-chromeos-theme.git ~/zorin-chromeos-theme && bash ~/zorin-chromeos-theme/install.sh
 ```
 
-Die drei Skripte sind im Repo als ausführbar markiert, deshalb funktioniert
+Die Skripte sind im Repo als ausführbar markiert, deshalb funktioniert
 nach dem Klonen genauso gut:
 
 ```bash
@@ -319,6 +347,7 @@ Grenze des Toolkits, keine offene Baustelle.
 ```
 install.sh                     Installation (ein Befehl)
 uninstall.sh                   vollständige Deinstallation
+tools/make-zip.sh              baut das Download-Archiv für Releases
 bin/chromeos-search-url        Standardsuchmaschine des Standardbrowsers
 theme/ChromeOS/gtk-3.0/        GTK-3-Theme (hell + dunkel)
 theme/ChromeOS/gnome-shell/    Shell-Theme hell + dunkel (Popups, Kalender, Dialoge)
@@ -354,7 +383,7 @@ cd ~/zorin-chromeos-theme && bash tests/run-all.sh
 
 | Harness | Prüfungen | Inhalt |
 | --- | --- | --- |
-| `tests/scripts/run.sh` | 121 | Probelauf, `--version`, `--check` vor und nach der Installation (auch ohne dunkle Shell-CSS), echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 19 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, dunkle Shell-CSS, Lauf ohne GNOME-Werkzeuge |
+| `tests/scripts/run.sh` | 134 | Probelauf, `--version`, `--check` vor und nach der Installation (auch ohne dunkle Shell-CSS), echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 19 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, dunkle Shell-CSS, Lauf ohne GNOME-Werkzeuge |
 | `tests/extension/lifecycle.mjs` | 75 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Strut, Sperrbildschirm (Shelf und Strut aus dem Chrome, danach unveränderte Geometrie), laufende Apps, `should_show()`, Tray inklusive Tastaturbelegung, Aufnahme- und Freigabe-Indikator, Suche, Lösch-Knopf, klickbare Seitenpunkte, Tastaturnavigation samt Scrollen zum Fokus, Trenner in der Shelf, „Neues Fenster“ im Menü, Kontextmenüs, Theme, dunkle Shell-CSS, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
 
 Dazu zwei Prüfungen ohne GNOME-Bezug:
@@ -416,7 +445,7 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
 - **Mauszeiger-Satz** über `bun tools/build-cursors.mjs --check`: alle 52
   Namen vorhanden, jede Xcursor-Datei mit gültigem Header, zwei Bildern
   (24/48 px), passenden Hotspots und nicht-leeren Pixeldaten.
-- **Skripte end-to-end** über `tests/scripts/run.sh` – 121 Prüfungen, alle
+- **Skripte end-to-end** über `tests/scripts/run.sh` – 134 Prüfungen, alle
   grün: Dry-Run ohne Änderung; `--check` meldet vor der Installation
   Abweichungen (Exit 1) und danach „Alles wie erwartet“ (Exit 0); echter Lauf
   installiert Theme, Extension, Mauszeiger, Schriften, GTK-4-Farbdatei und

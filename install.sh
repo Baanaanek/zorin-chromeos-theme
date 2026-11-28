@@ -126,10 +126,15 @@ run() {
     || die "Cursor-Satz fehlt: cursor/$CURSOR_NAME (mit tools/build-cursors.mjs erzeugen)"
 
 HAVE_GSETTINGS=0
-if command -v gsettings >/dev/null 2>&1; then
-    HAVE_GSETTINGS=1
-else
+if ! command -v gsettings >/dev/null 2>&1; then
     skip "gsettings nicht gefunden (keine GNOME-Sitzung) - Einstellungen werden uebersprungen."
+elif ! gsettings get org.gnome.desktop.interface gtk-theme >/dev/null 2>&1; then
+    # gsettings ist installiert, laeuft aber ohne D-Bus-Sitzung nicht (SSH,
+    # TTY, Container). Sonst wuerde jeder Schluessel als "nie gesetzt"
+    # gesichert und die Deinstallation koennte nichts zurueckholen.
+    skip "gsettings laeuft nicht (keine GNOME-Sitzung) - Einstellungen werden uebersprungen."
+else
+    HAVE_GSETTINGS=1
 fi
 
 HAVE_GNOME_EXT=0
@@ -570,7 +575,7 @@ check_state() {
     fi
 
     if [ "$HAVE_GSETTINGS" -eq 0 ]; then
-        warn "Kein gsettings gefunden - Einstellungen werden nicht geprueft."
+        warn "gsettings nicht nutzbar - Einstellungen werden nicht geprueft."
     else
         info "Pruefe Einstellungen"
         expect_value "gtk-theme" "$(query_key org.gnome.desktop.interface gtk-theme)" "'$THEME_NAME'"

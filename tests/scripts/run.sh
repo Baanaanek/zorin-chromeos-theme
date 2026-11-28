@@ -70,6 +70,26 @@ TEST_HOME="$TMP/home"
 STUB_STATE="$TMP/stub-state"
 BASE_PATH='/usr/bin:/bin'
 STUB_PATH="$HERE/stubs:$BASE_PATH"
+
+# PATH ohne GNOME-Werkzeuge fuer den "ohne GNOME"-Fall. Der CI-Runner hat ein
+# echtes gsettings (nur ohne D-Bus-Sitzung), ein reiner /usr/bin:/bin-PATH
+# waere dort also nicht "ohne GNOME". Darum ein eigener Ordner mit
+# Weiterleitungen auf die benoetigten Werkzeuge - ohne gsettings,
+# gnome-extensions, gnome-shell und dconf.
+BARE_BIN="$TMP/bare-bin"
+mkdir -p "$BARE_BIN"
+for tool in bash sh env dirname basename pwd mkdir cp chmod rm mv rmdir grep \
+            awk tr sed find wc cut cat sort head tail id uname date cmp cksum \
+            comm mktemp ls ln printf test true false; do
+    for dir in /usr/bin /bin; do
+        if [ -x "$dir/$tool" ]; then
+            printf '#!/bin/sh\nexec %s/%s "$@"\n' "$dir" "$tool" > "$BARE_BIN/$tool"
+            chmod +x "$BARE_BIN/$tool" 2>/dev/null || true
+            break
+        fi
+    done
+done
+BARE_PATH="$BARE_BIN"
 OUT="$TMP/stdout.log"
 ERR="$TMP/stderr.log"
 
@@ -115,18 +135,23 @@ printf '%s\n' "$UUID" 'zorin-dash@zorinos.com' 'zorin-menu@zorinos.com' \
 printf '%s\n' 'zorin-dash@zorinos.com' 'zorin-menu@zorinos.com' \
     > "$STUB_STATE/ext-enabled.txt"
 
+run_from() {
+    local dir=$1 script=$2 path=$3
+    shift 3
+    env -i PATH="$path" HOME="$TEST_HOME" LANG=C.UTF-8 \
+        STUB_STATE="$STUB_STATE" bash "$dir/$script" "$@"
+}
+
 run_stub() {
     local script=$1
     shift
-    env -i PATH="$STUB_PATH" HOME="$TEST_HOME" LANG=C.UTF-8 \
-        STUB_STATE="$STUB_STATE" bash "$REPO/$script" "$@"
+    run_from "$REPO" "$script" "$STUB_PATH" "$@"
 }
 
 run_bare() {
     local script=$1
     shift
-    env -i PATH="$BASE_PATH" HOME="$TEST_HOME" LANG=C.UTF-8 \
-        bash "$REPO/$script" "$@"
+    run_from "$REPO" "$script" "$BARE_PATH" "$@"
 }
 
 settings_restored() {
@@ -298,6 +323,14 @@ check 'GTK-3-Themes decken Menueleisten und Popover-Menues ab' bash -c '
     grep -q "^menubar" "$1" && grep -q "^modelbutton" "$1" &&
     grep -q "^menubar" "$2" && grep -q "^modelbutton" "$2"' \
     _ "$REPO/theme/ChromeOS/gtk-3.0/gtk.css" "$REPO/theme/ChromeOS/gtk-3.0/gtk-dark.css"
+check 'Archiv-Skript ist ausfuehrbar' is_exec "$REPO/tools/make-zip.sh"
+check 'Archiv-Skript ohne CRLF und syntaktisch ok' bash -c '
+    ! grep -q "$(printf "\r")" "$1" && bash -n "$1"' _ "$REPO/tools/make-zip.sh"
+check 'Release-Workflow baut das Archiv' bash -c '
+    grep -q "make-zip.sh" "$1" && grep -q "gh release create" "$1"' \
+    _ "$REPO/.github/workflows/release.yml"
+check 'README nennt den Download ohne git' bash -c '
+    grep -q "Ohne git" "$1" && grep -q "Download ZIP" "$1"' _ "$REPO/README.md"
 
 # --- 1. Probelauf ----------------------------------------------------------
 run_stub install.sh --dry-run >"$OUT" 2>"$ERR"
@@ -500,6 +533,35 @@ check 'Lauf ohne Installation meldet "Nichts zu entfernen"' \
     has_text "$OUT" 'Nichts zu entfernen'
 check 'Lauf ohne Installation warnt nicht ueber fehlende Sicherung' \
     bash -c '! grep -qF "Keine gesicherten Einstellungen" "$1"' _ "$ERR"
+
+# --- 11. Installation aus einem entpackten Archiv (ohne .git) --------------
+ARCHIVE="$TMP/archiv/zorin-chromeos-theme"
+mkdir -p "$ARCHIVE"
+( cd "$REPO" && cp -a install.sh uninstall.sh bin cursor data docs extension \
+    fonts theme LICENSE "$ARCHIVE/" )
+run_from "$ARCHIVE" install.sh "$STUB_PATH" >"$OUT" 2>"$ERR"
+check 'Archiv-Installation endet mit 0' eq "$?" 0
+check 'Archiv-Installation legt Theme und Extension an' \
+    bash -c '[ -f "$1/gnome-shell/gnome-shell.css" ] && [ -d "$2" ]' \
+    _ "$THEME_DIR" "$EXT_DIR"
+check 'Archiv braucht kein .git' missing "$ARCHIVE/.git"
+run_from "$ARCHIVE" uninstall.sh "$STUB_PATH" >"$OUT" 2>"$ERR"
+check 'Archiv-Deinstallation endet mit 0' eq "$?" 0
+check 'Archiv-Deinstallation raeumt das Theme weg' missing "$THEME_DIR"
+
+# --- 12. gsettings vorhanden, aber ohne Sitzung ----------------------------
+DEAD_BIN="$TMP/dead-bin"
+mkdir -p "$DEAD_BIN"
+printf '#!/bin/sh\nexit 1\n' > "$DEAD_BIN/gsettings"
+chmod +x "$DEAD_BIN/gsettings"
+run_from "$REPO" install.sh "$DEAD_BIN:$BARE_PATH" >"$OUT" 2>"$ERR"
+check 'Installation ohne Sitzung endet mit 0' eq "$?" 0
+check 'Installation ohne Sitzung ueberspringt die Einstellungen' \
+    has_text "$OUT" 'gsettings laeuft nicht'
+check 'Installation ohne Sitzung sichert keinen Schluessel' \
+    bash -c '[ ! -s "$1" ]' _ "$BACKUP_FILE"
+run_bare uninstall.sh >"$OUT" 2>"$ERR"
+check 'Deinstallation raeumt den Rest ohne Sitzung weg' missing "$THEME_DIR"
 
 # --- Ergebnis --------------------------------------------------------------
 printf '\n%s/%s Pruefungen bestanden\n' "$PASSED" "$TOTAL"

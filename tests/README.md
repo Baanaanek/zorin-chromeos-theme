@@ -6,7 +6,7 @@ erstes Argument (Standard: das Repo, in dem sie liegen).
 
 ```bash
 bash tests/run-all.sh                # beide Harnesses
-bash tests/scripts/run.sh            # nur Install/Uninstall (121 Prüfungen)
+bash tests/scripts/run.sh            # nur Install/Uninstall (134 Prüfungen)
 bun tests/extension/lifecycle.mjs    # nur Extension (75 Prüfungen)
 ```
 
@@ -63,9 +63,17 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
 - zweite Deinstallation: räumt den Rest, lässt den nie installierten Cursor
   und die GTK-4-Datei des Nutzers unberührt.
 - Lauf ohne GNOME-Werkzeuge: Installation und Deinstallation brechen nicht ab
-  und räumen auch Cursor und GTK-4-Datei vollständig auf.
+  und räumen auch Cursor und GTK-4-Datei vollständig auf. Der „ohne GNOME“-Fall
+  läuft mit einem eigenen PATH ohne `gsettings`, `gnome-extensions`,
+  `gnome-shell` und `dconf`, damit ein Runner mit echtem (aber sitzungslosem)
+  `gsettings` denselben Fall prüft statt eines anderen.
+- `gsettings` installiert, aber ohne Sitzung: die Installation überspringt die
+  Einstellungen, sichert keinen einzigen Schlüssel und meldet es; die
+  Deinstallation räumt danach trotzdem vollständig auf.
+- Installation aus einem entpackten Archiv ohne `.git` (der ZIP-Weg):
+  Installation und Deinstallation laufen aus dem Kopierverzeichnis.
 
-Der Test gilt als bestanden, wenn `121/121` erscheint. `KEEP=1` behält das
+Der Test gilt als bestanden, wenn `134/134` erscheint. `KEEP=1` behält das
 temporäre Verzeichnis und gibt den Pfad aus.
 
 ## `extension/lifecycle.mjs` – Extension-Lebenszyklus
@@ -104,6 +112,9 @@ lädt `extension.js` als echtes ES-Modul. Geprüft werden unter anderem:
   Sperrbildschirm ab (Uhr/Datum/Hinweis, Passwortfeld mit Fokus,
   Entsperr-Knopf, Kontoliste, Benachrichtigungs- und Medienkarten,
   Fehlermeldung).
+- Repo-Prüfungen für den Download ohne git: `tools/make-zip.sh` ist
+  ausführbar und syntaktisch in Ordnung, der Release-Workflow baut das Archiv
+  und die README beschreibt den ZIP-Weg.
 - Streckenprüfungen auf Repo-Ebene: das Shell-Theme gestaltet
   Schnelleinstellungen, Benachrichtigungen, Screenshot-UI, den
   Fensterumschalter und die Shell-Dialoge (Abmelden, Ausführen, Passphrase,

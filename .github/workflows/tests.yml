@@ -26,3 +26,8 @@ jobs:
           node tools/build-cursors.mjs --check
           node tools/check-contrast.mjs
           node tools/check-settings.mjs
+
+      - name: Download-Archiv bauen (ohne git installierbar)
+        run: |
+          bash tools/make-zip.sh "$RUNNER_TEMP/dist"
+          unzip -l "$RUNNER_TEMP/dist/zorin-chromeos-theme.zip" | grep -q "zorin-chromeos-theme/install.sh"

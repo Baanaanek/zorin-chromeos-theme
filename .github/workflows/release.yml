@@ -1,0 +1,61 @@
+name: Release
+
+# Baut bei einem Tag (v1.1.0) das Download-Archiv und haengt es an ein
+# GitHub-Release. Damit laesst sich das Theme ohne git installieren:
+# Releases -> zorin-chromeos-theme.zip.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag, fuer den ein Release gebaut wird (z. B. v1.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Skript-Harness (install/uninstall gegen Stubs)
+        run: bash tests/scripts/run.sh .
+
+      - name: Extension-Harness (Lifecycle gegen GNOME-Mocks)
+        run: node tests/extension/lifecycle.mjs .
+
+      - name: Mauszeiger, Farben und Einstellungen pruefen
+        run: |
+          node tools/build-cursors.mjs --check
+          node tools/check-contrast.mjs
+          node tools/check-settings.mjs
+
+      - name: Download-Archiv bauen
+        run: bash tools/make-zip.sh
+
+      - name: Release veroeffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/zorin-chromeos-theme.zip --clobber
+          else
+            gh release create "$TAG" dist/zorin-chromeos-theme.zip \
+              --title "ChromeOS-Theme $TAG" \
+              --generate-notes
+          fi
+
+      - name: Archiv als Workflow-Artefakt sichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: zorin-chromeos-theme
+          path: dist/zorin-chromeos-theme.zip

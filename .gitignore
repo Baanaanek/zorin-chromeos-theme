@@ -6,6 +6,8 @@ Thumbs.db
 # lokale Testausgaben
 /tmp/
 /build/
+# Download-Archiv aus tools/make-zip.sh
+dist/
 
 # Werkzeug- und Sitzungsordner der Entwicklungsumgebung
 .cloud-attachments/
