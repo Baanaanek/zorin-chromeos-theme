@@ -84,8 +84,9 @@ cd ~/Downloads/zorin-chromeos-theme   # Pfad je nach Entpackort
 bash install.sh
 ```
 
-Dasselbe in einem Rutsch (`curl` und `unzip` sind bei Zorin OS dabei) – das
-Archiv enthält den Ordner bereits, deshalb reicht `-d ~`:
+Dasselbe in einem Rutsch (`curl` und `unzip` sind bei Zorin OS dabei; falls
+`unzip` fehlt: `sudo apt install unzip`) – das Archiv enthält den Ordner
+bereits, deshalb reicht `-d ~`:
 
 ```bash
 curl -L -o /tmp/theme.zip \
