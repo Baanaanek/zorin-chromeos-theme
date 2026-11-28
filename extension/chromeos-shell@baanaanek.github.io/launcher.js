@@ -26,6 +26,11 @@ export class Launcher {
         this._engineName = null;
         this._chromeAdded = false;
         this._contextMenu = new ContextMenu();
+        // Fokussierbare Eintraege des aktuellen Inhalts (Kacheln bzw. Treffer)
+        // und Position darin; -1 heisst: das Suchfeld hat den Fokus.
+        this._items = [];
+        this._focusIndex = -1;
+        this._mode = 'browse';
         this._build();
     }
 
@@ -62,6 +67,10 @@ export class Launcher {
         });
         this.entry.clutter_text.connect('text-changed', () => this._refresh());
         this.entry.clutter_text.connect('activate', () => this._activateFirst());
+        // Aus dem Suchfeld heraus muss Pfeil-unten im Raster landen; Links und
+        // Rechts bleiben dem Textcursor.
+        this.entry.clutter_text.connect('key-press-event',
+            (_text, event) => this._onEntryKeyPress(event));
 
         // ChromeOS zeigt rechts im Suchfeld einen Loesch-Knopf, sobald Text drinsteht.
         this._clearButton = new St.Button({
@@ -99,7 +108,7 @@ export class Launcher {
         this._dots = new St.BoxLayout({
             style_class: 'chromeos-page-dots',
             x_align: Clutter.ActorAlign.CENTER,
-            reactive: false,
+            reactive: true,
             visible: false,
         });
         this._dots.hide();
@@ -204,6 +213,8 @@ export class Launcher {
     _refresh() {
         const query = this.entry.get_text().trim();
         this.content.destroy_all_children();
+        this._items = [];
+        this._focusIndex = -1;
         if (query.length === 0)
             this._buildBrowse();
         else
@@ -243,7 +254,12 @@ export class Launcher {
             this._dots.destroy_all_children();
             this._pageDots = [];
             for (let index = 0; index < pages; index++) {
-                const dot = new St.Widget({style_class: 'chromeos-page-dot'});
+                // Als Knopf, damit ein Klick direkt auf die Seite springt.
+                const dot = new St.Button({
+                    style_class: 'chromeos-page-dot',
+                    can_focus: false,
+                });
+                dot.connect('clicked', () => this._scrollToPage(index));
                 this._dots.add_child(dot);
                 this._pageDots.push(dot);
             }
@@ -259,6 +275,21 @@ export class Launcher {
         this._dots.show();
     }
 
+    // Klick auf einen Seitenpunkt: eine Seite weiter bzw. zurueck. Der Wert
+    // wird auf den Scrollbereich begrenzt, damit die letzte Seite nicht
+    // ueber das Ende hinaus springt.
+    _scrollToPage(page) {
+        if (this._destroyed)
+            return;
+        const adjustment = this.scroll.vscroll.adjustment;
+        const pageSize = Number(adjustment.page_size) || 0;
+        if (pageSize <= 0)
+            return;
+        const max = Math.max(0, (Number(adjustment.upper) || 0) - pageSize);
+        adjustment.value = Math.min(max, Math.max(0, page * pageSize));
+        this._syncDots();
+    }
+
     // get_installed() enthaelt auch NoDisplay-/OnlyShowIn-Eintraege; GNOME
     // filtert sie mit should_show(), also tun wir das genauso.
     _allApps() {
@@ -268,6 +299,7 @@ export class Launcher {
     }
 
     _buildBrowse() {
+        this._mode = 'browse';
         const apps = this._allApps();
 
         this.content.add_child(this._sectionTitle('Apps'));
@@ -298,6 +330,7 @@ export class Launcher {
     }
 
     _buildSearch(query) {
+        this._mode = 'search';
         const needle = query.toLowerCase();
         const matches = this._allApps().filter(app => {
             if (app.get_name().toLowerCase().includes(needle))
@@ -347,7 +380,19 @@ export class Launcher {
         button._chromeosAppId = app.get_id();
         button.connect('clicked', () => this._launch(app));
         this._connectContextMenu(app, button);
+        this._trackItem(button);
         return button;
+    }
+
+    // Merkt sich den Eintrag fuer die Tastaturnavigation. Reihenfolge der
+    // Aufrufe ist die Reihenfolge im Inhalt (Raster zeilenweise, Treffer
+    // untereinander).
+    _trackItem(button) {
+        const index = this._items.length;
+        this._items.push(button);
+        button.connect('key-focus-in', () => {
+            this._focusIndex = index;
+        });
     }
 
     _connectContextMenu(app, button) {
@@ -388,6 +433,7 @@ export class Launcher {
         button._chromeosAppId = app.get_id();
         button.connect('clicked', () => this._launch(app));
         this._connectContextMenu(app, button);
+        this._trackItem(button);
         return button;
     }
 
@@ -432,6 +478,7 @@ export class Launcher {
             this.hide();
             openWebSearch(query);
         });
+        this._trackItem(button);
         return button;
     }
 
@@ -483,10 +530,101 @@ export class Launcher {
     }
 
     _onKeyPress(event) {
-        if (event.get_key_symbol() === Clutter.KEY_Escape) {
+        const symbol = event.get_key_symbol();
+        if (symbol === Clutter.KEY_Escape) {
             this.hide();
             return Clutter.EVENT_STOP;
         }
+        if (this._navigate(symbol))
+            return Clutter.EVENT_STOP;
         return Clutter.EVENT_PROPAGATE;
+    }
+
+    _onEntryKeyPress(event) {
+        if (event.get_key_symbol() === Clutter.KEY_Down) {
+            this._focusItem(0);
+            return Clutter.EVENT_STOP;
+        }
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    // Pfeiltasten: im Raster zeilenweise (5 Spalten), in den Treffern
+    // einzeln. Pfeil hoch aus der ersten Zeile fuehrt zurueck ins Suchfeld.
+    _navigate(symbol) {
+        const items = this._items;
+        if (items.length === 0)
+            return false;
+        const step = this._mode === 'browse' ? GRID_COLUMNS : 1;
+
+        if (symbol === Clutter.KEY_Down) {
+            const from = this._focusIndex < 0 ? -step : this._focusIndex;
+            this._focusItem(Math.min(items.length - 1, from + step));
+            return true;
+        }
+        if (symbol === Clutter.KEY_Up) {
+            if (this._focusIndex < 0)
+                return false;
+            const target = this._focusIndex - step;
+            if (target < 0)
+                this._focusEntry();
+            else
+                this._focusItem(target);
+            return true;
+        }
+        if (this._focusIndex < 0)
+            return false;
+        if (symbol === Clutter.KEY_Left) {
+            this._focusItem(Math.max(0, this._focusIndex - 1));
+            return true;
+        }
+        if (symbol === Clutter.KEY_Right) {
+            this._focusItem(Math.min(items.length - 1, this._focusIndex + 1));
+            return true;
+        }
+        return false;
+    }
+
+    _focusItem(index) {
+        const item = this._items[index];
+        if (!item)
+            return;
+        this._focusIndex = index;
+        item.grab_key_focus();
+        this._scrollIntoView(item);
+    }
+
+    // St.ScrollView holt ein fokussiertes Kind nicht von selbst ins Bild:
+    // ohne das hier wandern die Pfeiltasten in Kacheln ausserhalb des
+    // sichtbaren Bereichs. Die Seitenpunkte folgen der neuen Seite.
+    _scrollIntoView(item) {
+        try {
+            const adjustment = this.scroll.vscroll.adjustment;
+            const pageSize = Number(adjustment.page_size) || 0;
+            // Vor der ersten Allocation (pageSize 0) gibt es nichts zu
+            // scrollen; die Punkte werden trotzdem nachgezogen.
+            if (pageSize > 0) {
+                const current = Number(adjustment.value) || 0;
+                const upper = Number(adjustment.upper) || 0;
+                const max = Math.max(0, upper - pageSize);
+                // Der Inhalt verschiebt sich mit dem Scrollen, die Kachel
+                // nicht: die Differenz ist die Lage im Inhalt.
+                const viewY = this.content.get_transformed_position()[1];
+                const itemY = item.get_transformed_position()[1];
+                const top = itemY - viewY;
+                const bottom = top + (Number(item.height) || 0);
+                if (top < current)
+                    adjustment.value = Math.max(0, Math.min(max, top));
+                else if (bottom > current + pageSize)
+                    adjustment.value = Math.max(0, Math.min(max, bottom - pageSize));
+            }
+        } catch (e) {
+            // ohne Allocation bleibt der Fokus trotzdem gesetzt
+        }
+        this._syncDots();
+    }
+
+    _focusEntry() {
+        this._focusIndex = -1;
+        this.entry.grab_key_focus();
     }
 }

@@ -49,6 +49,10 @@ export class FakeApp {
         this.opened++;
     }
 
+    can_open_new_window() {
+        return true;
+    }
+
     create_icon_texture(size) {
         const texture = new St.Icon({icon_size: size, style_class: 'chromeos-icon-texture'});
         texture._appId = this._id;

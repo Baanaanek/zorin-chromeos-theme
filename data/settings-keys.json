@@ -19,11 +19,6 @@
     "titlebar-font": {"since": 3},
     "button-layout": {"since": 3}
   },
-  "org.gnome.desktop.background": {
-    "picture-uri": {"since": 3},
-    "picture-uri-dark": {"since": 42},
-    "picture-options": {"since": 3}
-  },
   "org.gnome.shell": {
     "favorite-apps": {"since": 3}
   },

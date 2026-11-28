@@ -17,18 +17,21 @@ Standardbrowsers**, nicht Google.
 
 ## Aussehen
 
-Im Repo liegen **keine fremden Bilder**: keine ChromeOS-Screenshots, keine
-Google-Wallpaper. Alles Bildliche ist selbst erzeugt und steht unter
-derselben MIT-Lizenz wie das Theme.
+Im Repo liegen **keine fremden Bilder** und **keine Hintergrundbilder**:
+keine ChromeOS-Screenshots, keine Google-Grafiken. Alles Bildliche (die
+Vorschaubilder des Mauszeigers) ist selbst erzeugt und steht unter derselben
+MIT-Lizenz wie das Theme.
 
 | Element | Umsetzung |
 | --- | --- |
-| Launcher | Panel oben links, 560 px breit, Suchzeile mit Lupe und Lösch-Knopf, App-Raster mit 5 Spalten, Seitenpunkte unter dem Raster |
-| Shelf | 56 px hohe, schwebende Leiste unten: runder Launcher-Knopf links, angeheftete und laufende Apps, Uhr und Status rechts |
+| Launcher | Panel oben links, 560 px breit, Suchzeile mit Lupe und Lösch-Knopf, App-Raster mit 5 Spalten, klickbare Seitenpunkte unter dem Raster, Tastaturnavigation mit den Pfeiltasten |
+| Shelf | 56 px hohe, schwebende Leiste unten: runder Launcher-Knopf links, angeheftete und laufende Apps mit Trenner dazwischen, Uhr und Status rechts |
 | Tray | echte GNOME-Knöpfe, in die Shelf umgehängt – Tastaturbelegung, Aufnahme- und Freigabe-Anzeige, Kalender und Schnelleinstellungen sitzen in der Leiste |
 | Mauszeiger | eigener Xcursor-Satz, 52 Namen, 24/48 px (`cursor/ChromeOS/`) |
-| Hintergründe | drei eigene Motive, per Skript erzeugt (`tools/build-wallpapers.mjs`) |
 | Sperrbildschirm | Konto-Bild (96 px, rund, ohne Rahmen), Name in Weiß, Passwortfeld als dunkle Kapsel mit weißer Schrift, Benachrichtigungen als dunkle Karten; Hintergrund ist der weichgezeichnete Desktop-Hintergrund |
+| Schnelleinstellungen | schwebende Karten mit Akzent beim Einschalten, runde Regler, Umschalter im ChromeOS-Look; Kalender und Benachrichtigungen als Popup darüber |
+| Screenshot-UI | Werkzeugleiste (Super+Druck) als schwebende Karte unten, Modus-Knöpfe im Akzent, roter Auslöser beim Aufnehmen, Auswahlrahmen und Fensterwahl im Akzent |
+| Apps | Einstellungen und Dateien über die libadwaita-Farbtokens, Zorin-Programme (GTK 3) über ein eigenes Theme inklusive Infoleisten, Werkzeugleisten und Dateiauswahl |
 | Schriften | Roboto und Roboto Mono (SIL OFL 1.1) liegen bei und werden mitinstalliert |
 
 Farben, Radien und Geometrie stehen in [`docs/design.md`](docs/design.md).
@@ -99,7 +102,7 @@ bash ~/zorin-chromeos-theme/install.sh --help
 Teile weglassen – sie bleiben dann unangetastet, auch beim Deinstallieren:
 
 ```bash
-bash ~/zorin-chromeos-theme/install.sh --no-cursor --no-gtk4 --no-ding --no-fonts --no-wallpaper
+bash ~/zorin-chromeos-theme/install.sh --no-cursor --no-gtk4 --no-ding --no-fonts
 ```
 
 Das Skript verweigert den Start unter `sudo`: das Theme gehört ins
@@ -119,7 +122,6 @@ u. ä.), damit nichts doppelt erscheint.
 | `~/.local/share/themes/ChromeOS/` | GTK-3-Theme + GNOME-Shell-Theme |
 | `~/.local/share/gnome-shell/extensions/chromeos-shell@baanaanek.github.io/` | Launcher, Shelf, Websuche |
 | `~/.local/bin/chromeos-search-url` | ermittelt die Suchmaschine des Standardbrowsers |
-| `~/.local/share/backgrounds/chromeos-wallpaper.png` | Standard-Hintergrund (eigenes PNG) |
 | `~/.local/share/fonts/ChromeOS/` | Roboto + Roboto Mono (SIL OFL 1.1) |
 | `~/.local/share/icons/ChromeOS/` | eigener Mauszeiger-Satz (52 Namen, 24/48 px) |
 | `~/.config/gtk-4.0/gtk.css` | ChromeOS-Farben für GTK 4/libadwaita (eine vorhandene Datei wird vorher gesichert) |
@@ -144,7 +146,7 @@ weiteren Dateien.
 entfernt würde. Entfernt werden nur die Teile, die tatsächlich
 installiert wurden (festgehalten in `~/.local/state/chromeos-theme/components.txt`):
 Extension, Theme-Ordner (nur mit Theme-Markierung), Mauszeiger-Satz,
-Schriften, GTK-4-Farbdatei, Suchhelfer, Hintergrundbild, Konfiguration und
+Schriften, GTK-4-Farbdatei, Suchhelfer, Konfiguration und
 der Zustandsordner.
 
 Nur die Einstellungen zurückholen, ohne Dateien anzufassen:
@@ -167,12 +169,14 @@ eigene `~/.config/gtk-4.0/gtk.css` wird zurückgespielt.
 | **Supertaste** | öffnet den Launcher (statt der GNOME-Übersicht) |
 | Tippen im Launcher | filtert Apps |
 | **Enter** | startet den ersten Treffer, sonst Websuche |
+| **↑ / ↓ / ← / →** | Tastaturnavigation im App-Raster und in den Treffern; ↑ aus der ersten Zeile zurück ins Suchfeld |
 | **Esc** | Launcher schließen |
+| Klick auf einen Seitenpunkt | springt auf diese Seite des App-Rasters |
 | Klick auf App-Kachel | App starten bzw. Fenster nach vorn holen |
 | Mittelklick auf Shelf-Icon | neues Fenster |
 | Uhr rechts in der Shelf | Kalender |
 | Status-Icons rechts | Schnelleinstellungen (erscheinen über der Shelf) |
-| Rechtsklick auf Shelf-/Launcher-Icon | Menü: An Shelf anheften bzw. entfernen, Fenster schließen, App-Info |
+| Rechtsklick auf Shelf-/Launcher-Icon | Menü: Neues Fenster, An Shelf anheften bzw. entfernen, Fenster schließen, App-Info |
 | Sperren (`Super+L`) | Chromebook-Sperrbildschirm mit Uhr, Konto und Passwortfeld |
 
 Arbeitsflächen bleiben über `Ctrl+Alt+↑/↓` erreichbar.
@@ -273,14 +277,16 @@ Grenze des Toolkits, keine offene Baustelle.
 
 - **Farben:** `theme/ChromeOS/gtk-3.0/gtk.css` und
   `theme/ChromeOS/gnome-shell/gnome-shell.css` (Akzent ist `#1a73e8`).
-  Nach Änderungen neu installieren (`install.sh`) und neu anmelden.
-- **Hintergrund:** Einstellungen → Darstellung, oder in
-  `tools/build-wallpapers.mjs` die Motive ändern, mit
-  `bun tools/build-wallpapers.mjs` neu erzeugen und `install.sh` erneut
-  ausführen. Ein eigenes Bild geht auch direkt über
-  `gsettings set org.gnome.desktop.background picture-uri …`.
+  Die dunkle Shell-Fassung derselben Selektoren steht in
+  `theme/ChromeOS/gnome-shell/gnome-shell-dark.css`; sie wird nur bei
+  `color-scheme prefer-dark` zusätzlich geladen. Nach Änderungen neu
+  installieren (`install.sh`) und neu anmelden.
+- **Hintergrund:** das Theme bringt bewusst keins mit und lässt die
+  Einstellung unangetastet. Bild über Einstellungen → Darstellung wählen
+  oder direkt `gsettings set org.gnome.desktop.background picture-uri …`.
 - **Shelf-Apps:** über das Rechtsklick-Menü der Shelf oder des Launchers
-  anheften/entfernen; die Shelf zeigt Favoriten plus laufende Apps.
+  anheften/entfernen; die Shelf zeigt Favoriten plus laufende Apps und trennt
+  beide Gruppen mit einer dünnen Linie.
 - **Mauszeiger:** Formen und Farben in `tools/build-cursors.mjs` ändern und
   mit `bun tools/build-cursors.mjs` neu erzeugen.
 - **GTK-4-Farben:** `theme/ChromeOS/gtk-4.0/gtk.css` (dieselben Tokens wie
@@ -303,17 +309,15 @@ install.sh                     Installation (ein Befehl)
 uninstall.sh                   vollständige Deinstallation
 bin/chromeos-search-url        Standardsuchmaschine des Standardbrowsers
 theme/ChromeOS/gtk-3.0/        GTK-3-Theme (hell + dunkel)
-theme/ChromeOS/gnome-shell/    Shell-Theme (Panels, Popups, App-Raster)
+theme/ChromeOS/gnome-shell/    Shell-Theme hell + dunkel (Popups, Kalender, Dialoge)
 extension/chromeos-shell@…/    Launcher, Shelf, Websuche
 theme/ChromeOS/gtk-4.0/        GTK-4/libadwaita-Farben (Nutzer-CSS)
 cursor/ChromeOS/               eigener Mauszeiger-Satz (Xcursor, MIT)
 tools/build-cursors.mjs        erzeugt und prüft den Mauszeiger-Satz
-assets/wallpapers/             drei eigene, erzeugte Hintergrundmotive (PNG)
 fonts/                         Roboto + Roboto Mono (SIL OFL 1.1) + Lizenztext
 data/settings-keys.json        gsettings-Schluessel je GNOME-Version
 docs/reference/                Design-Referenz (reiner Text, keine Bilder)
-tools/build-wallpapers.mjs     erzeugt und prueft die Hintergruende
-tools/check-contrast.mjs       WCAG-Kontrast der GTK-4-Farbtokens
+tools/check-contrast.mjs       WCAG-Kontrast der GTK-4- und Shell-Farbtokens
 tools/check-settings.mjs       Schluessel gegen data/settings-keys.json
 .github/workflows/tests.yml    CI: beide Harnesses + Asset-Pruefungen
 docs/design.md                 Design-Tokens, Geometrie, Entscheidungen
@@ -338,14 +342,13 @@ cd ~/zorin-chromeos-theme && bash tests/run-all.sh
 
 | Harness | Prüfungen | Inhalt |
 | --- | --- | --- |
-| `tests/scripts/run.sh` | 103 | Probelauf, `--version`, `--check` vor und nach der Installation, echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 22 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, Lauf ohne GNOME-Werkzeuge |
-| `tests/extension/lifecycle.mjs` | 66 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Strut, Sperrbildschirm (Shelf und Strut aus dem Chrome, danach unveränderte Geometrie), laufende Apps, `should_show()`, Tray inklusive Tastaturbelegung, Aufnahme- und Freigabe-Indikator, Suche, Lösch-Knopf, Seitenpunkte, Kontextmenüs, Theme, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
+| `tests/scripts/run.sh` | 106 | Probelauf, `--version`, `--check` vor und nach der Installation (auch ohne dunkle Shell-CSS), echter Lauf, zweiter Lauf, `--activate`, Teilinstallation mit `--no-cursor`/`--no-gtk4`, `--settings-only`, Deinstallation, Wiederherstellung aller 19 Einstellungen inkl. „vorher nie gesetzt“, Cursor, Schriften, GTK-4-Datei, dunkle Shell-CSS, Lauf ohne GNOME-Werkzeuge |
+| `tests/extension/lifecycle.mjs` | 75 | `enable()`/`disable()` gegen gemocktes GNOME: Launcher, Shelf, Strut, Sperrbildschirm (Shelf und Strut aus dem Chrome, danach unveränderte Geometrie), laufende Apps, `should_show()`, Tray inklusive Tastaturbelegung, Aufnahme- und Freigabe-Indikator, Suche, Lösch-Knopf, klickbare Seitenpunkte, Tastaturnavigation samt Scrollen zum Fokus, Trenner in der Shelf, „Neues Fenster“ im Menü, Kontextmenüs, Theme, dunkle Shell-CSS, Dunkelmodus, Signal-Aufräumen, zweiter Zyklus |
 
-Dazu drei Prüfungen ohne GNOME-Bezug:
+Dazu zwei Prüfungen ohne GNOME-Bezug:
 
 | Werkzeug | Inhalt |
 | --- | --- |
-| `tools/build-wallpapers.mjs --check` | Hintergründe sind gültige PNGs, ihre Pixel entsprechen dem Generator (Byte-Vergleich scheidet aus, zlib komprimiert je nach Laufzeit anders), keine fremden Bilder im Ordner |
 | `tools/check-contrast.mjs` | 17 Text-/Akzentpaare der GTK-4-Tokens erfüllen WCAG AA in hell und dunkel; beide Modi definieren dieselben Tokens |
 | `tools/check-settings.mjs` | jeder `set_key`-Aufruf steht in `data/settings-keys.json` und die Matrix enthält keinen ungenutzten Schlüssel |
 
@@ -375,7 +378,13 @@ das Theme nicht anfordert, oder Material, das nicht frei lizenzierbar ist.
   Farbe, Radien und Position werden angeglichen.
 - **Dunkelmodus:** Die Installation setzt `color-scheme default` (hell) wie
   ChromeOS. Wer umschaltet, bekommt die dunkle Palette aus derselben
-  GTK-4-Datei; Shelf und Launcher folgen über `chromeos-dark`.
+  GTK-4-Datei; Shelf und Launcher folgen über `chromeos-dark`, und die
+  Extension tauscht die Shell-CSS gegen `gnome-shell-dark.css`, sodass auch
+  Kalender, Tray-Popups, Schnelleinstellungen, Benachrichtigungen, Dialoge
+  und der Sperrbildschirm dunkel sind (Passwortfeld und Benachrichtigungs-
+  karten bekommen dichtere Flaechen, weil sie ueber dem Hintergrundbild
+  liegen). St (die CSS-Engine der Shell) kennt keine `@media`-Abfragen –
+  deshalb zwei Dateien statt eines Dunkelblocks.
 - **Zorin OS 17 / GNOME 43:** GTK-Theme und Hintergrund funktionieren, die
   Shell-Extension braucht GNOME 45+.
 
@@ -395,14 +404,14 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
 - **Mauszeiger-Satz** über `bun tools/build-cursors.mjs --check`: alle 52
   Namen vorhanden, jede Xcursor-Datei mit gültigem Header, zwei Bildern
   (24/48 px), passenden Hotspots und nicht-leeren Pixeldaten.
-- **Skripte end-to-end** über `tests/scripts/run.sh` – 103 Prüfungen, alle
+- **Skripte end-to-end** über `tests/scripts/run.sh` – 106 Prüfungen, alle
   grün: Dry-Run ohne Änderung; `--check` meldet vor der Installation
   Abweichungen (Exit 1) und danach „Alles wie erwartet“ (Exit 0); echter Lauf
-  installiert Theme, Extension, Mauszeiger, Schriften, GTK-4-Farbdatei,
-  Helfer und Hintergrund; zweiter Lauf idempotent; Teilinstallation mit
+  installiert Theme, Extension, Mauszeiger, Schriften, GTK-4-Farbdatei und
+  Helfer; zweiter Lauf idempotent; Teilinstallation mit
   `--no-cursor --no-gtk4` lässt genau diese Teile unangetastet und hält sie
   in `components.txt` fest; `--settings-only` holt nur die Einstellungen
-  zurück; `uninstall.sh` entfernt alles, stellt alle 22 gesicherten
+  zurück; `uninstall.sh` entfernt alles, stellt alle 19 gesicherten
   `gsettings`-Werte exakt wieder her, resettet vorher nie gesetzte Schlüssel
   (`cursor-theme`, `cursor-size`, `titlebar-font`) und reaktiviert die zuvor
   deaktivierten Zorin-Leisten. Zusätzlich: Lauf ohne GNOME-Werkzeuge bricht
@@ -411,8 +420,9 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
   Sperrbildschirm enthält.
 - **Extension-Lebenszyklus** über `tests/extension/lifecycle.mjs` mit den
   echten Quellen gegen ein gemocktes GNOME (St, Clutter, Main, Shell,
-  PopupMenu) – 66 Prüfungen, alle grün, inklusive Lösch-Knopf im Suchfeld,
-  Seitenpunkten unter dem App-Raster und zweitem
+  PopupMenu) – 75 Prüfungen, alle grün, inklusive Lösch-Knopf im Suchfeld,
+  Seitenpunkten unter dem App-Raster, Fokus-Scroll der Tastaturnavigation
+  und zweitem
   enable/disable-Zyklus: `enable()` baut Launcher und Shelf, hängt
   Tastaturbelegung, Aufnahme- und Freigabe-Indikator sowie Datum und
   Schnelleinstellungen um, blendet die Top-Leiste aus; Rechtsklick öffnet
@@ -423,11 +433,17 @@ Geprüft wurde im Arbeitsbaum und gegen einen frischen Klon, Stand `main`:
   48.0 sowie Mutter 46: alle genutzten APIs existieren; entfernte APIs
   (`Shell.App.should_show()`, `get_keywords()`) und Legacy-Importe
   (`imports.*`, `ExtensionUtils`) kommen nicht vor.
-- **Ohne GNOME prüfbar:** `bun tools/build-wallpapers.mjs --check` (drei
-  gültige PNGs, Pixel entsprechend dem Generatorstand, keine fremden Bilder
-  im Ordner),
-  `bun tools/check-contrast.mjs` (17 Farbpaare erfüllen WCAG AA in hell und
-  dunkel, beide Modi definieren dieselben Tokens) und
+- **Ohne GNOME prüfbar:** `bun tools/check-contrast.mjs` (17 GTK-Farbpaare
+  erfüllen WCAG AA in hell
+  und dunkel, beide Modi definieren dieselben Tokens; dazu 17 Paare der
+  dunklen Shell-CSS für Popups, Kalender, Schnelleinstellungen und Dialoge
+  sowie 14 Sperrbildschirm-Paare – Uhr/Datum, Eingabe mit Fokus, Entsperr-Knopf,
+  Kontoliste, Benachrichtigung mit Medienzeile, Fehlermeldung – sowie 13
+  Oberflaechen-Paare fuer Schnelleinstellungen, Benachrichtigungen, OSD,
+  Fensterkennung und Screenshot-UI, jeweils in hell und dunkel;
+  halbtransparente Flaechen ueber dem
+  Hintergrund gerechnet)
+  und
   `bun tools/check-settings.mjs` (jeder gesetzte Schlüssel steht mit
   Mindestversion in `data/settings-keys.json`). Der Kontrastlauf hat dabei
   zwei echte Fehler gefunden: im Dunkelmodus fehlten die Tokens für

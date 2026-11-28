@@ -262,6 +262,15 @@ export class Shelf {
             console.warn(`[chromeos-shell] laufende Apps nicht lesbar: ${e}`);
         }
 
+        // Wie ChromeOS: duenne Trennlinie zwischen angehefteten und nur
+        // laufenden Apps, aber nur wenn beide Gruppen vorhanden sind.
+        if (favorites.length > 0 && running.length > 0) {
+            this._appsBox.add_child(new St.Widget({
+                style_class: 'chromeos-shelf-apps-divider',
+                y_align: Clutter.ActorAlign.CENTER,
+            }));
+        }
+
         for (const app of running)
             this._appsBox.add_child(this._appButton(app, false));
     }

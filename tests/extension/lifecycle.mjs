@@ -35,9 +35,12 @@ fs.cpSync(MOCK_SOURCE, MOCKS, {recursive: true});
 fs.mkdirSync(path.join(DATA_HOME, 'themes', 'ChromeOS', 'gnome-shell'), {recursive: true});
 fs.mkdirSync(path.join(DATA_HOME, 'themes', 'ChromeOS', 'gtk-3.0'), {recursive: true});
 
-// Theme-CSS, das theme.js laden soll.
+// Theme-CSS, das theme.js laden soll. Die dunkle Fassung liegt daneben.
 const THEME_CSS = path.join(DATA_HOME, 'themes', 'ChromeOS', 'gnome-shell', 'gnome-shell.css');
 fs.writeFileSync(THEME_CSS, '/* Theme-Testdatei */\n.chromeos-shelf { min-height: 56px; }\n');
+const THEME_DARK_CSS = path.join(DATA_HOME, 'themes', 'ChromeOS', 'gnome-shell',
+    'gnome-shell-dark.css');
+fs.writeFileSync(THEME_DARK_CSS, '/* Dunkle Testdatei */\n.popup-menu-content { background-color: #202124; }\n');
 fs.writeFileSync(path.join(DATA_HOME, 'themes', 'ChromeOS', 'gtk-3.0', 'gtk.css'),
     '.chromeos-test {}\n', {flag: 'w'});
 
@@ -239,7 +242,7 @@ check('app-state-changed baut die Shelf neu auf', () => {
     const ids = shelf._appsBox.get_children().map(button => button._chromeosAppId);
     if (!ids.includes('org.gnome.Nautilus'))
         throw new Error(`laufende App fehlt: ${ids.join(', ')}`);
-    eq(shelf._appsBox.get_children().length, 3, 'Shelf-Apps');
+    eq(shelf._appsBox.get_children().length, 4, 'Shelf-Apps inkl. Trenner');
     apps.running.splice(apps.running.indexOf(apps.files), 1);
     appSystem.emit('app-state-changed');
     eq(shelf._appsBox.get_children().length, 2, 'Shelf-Apps nach App-Ende');
@@ -253,6 +256,24 @@ check('Shelf nimmt versteckte laufende Apps nicht auf', () => {
         throw new Error('NoDisplay-App steht in der Shelf');
     apps.running.splice(apps.running.indexOf(apps.hidden), 1);
     appSystem.emit('app-state-changed');
+    return true;
+});
+check('Trenner steht zwischen angehefteten und laufenden Apps', () => {
+    apps.running.push(apps.files);
+    appSystem.emit('app-state-changed');
+    const children = shelf._appsBox.get_children();
+    const index = children.findIndex(child =>
+        child.has_style_class_name('chromeos-shelf-apps-divider'));
+    if (index < 0)
+        throw new Error('kein Trenner in der Shelf');
+    eq(index, 2, 'Position nach den beiden Favoriten');
+    eq(children[index - 1]._chromeosAppId, 'org.gnome.Terminal', 'Favorit davor');
+    eq(children[index + 1]._chromeosAppId, 'org.gnome.Nautilus', 'laufende App dahinter');
+    apps.running.splice(apps.running.indexOf(apps.files), 1);
+    appSystem.emit('app-state-changed');
+    eq(shelf._appsBox.get_children().some(child =>
+        child.has_style_class_name('chromeos-shelf-apps-divider')), false,
+    'ohne laufende Apps kein Trenner');
     return true;
 });
 check('Datum-Knopf liegt in der Shelf', () =>
@@ -454,6 +475,21 @@ check('Seitenpunkte folgen der Scrollposition', () => {
     eq(dots[0].has_style_class_name('chromeos-page-dot-active'), false, 'erste inaktiv');
     return true;
 });
+check('Klick auf einen Seitenpunkt springt auf die Seite', () => {
+    const adjustment = launcher.scroll.vscroll.adjustment;
+    adjustment.upper = 2000;
+    adjustment.page_size = 500;
+    adjustment.value = 0;
+    adjustment.emit('changed');
+    const dots = launcher._dots.get_children();
+    eq(dots.length, 4, 'vier Seiten');
+    dots[1].emit('clicked');
+    eq(adjustment.value, 500, 'zweite Seite');
+    eq(dots[1].has_style_class_name('chromeos-page-dot-active'), true, 'zweite Marke aktiv');
+    dots[3].emit('clicked');
+    eq(adjustment.value, 1500, 'letzte Seite bleibt im Scrollbereich');
+    return true;
+});
 check('Seitenpunkte verschwinden beim Suchen', () => {
     launcher.entry.set_text('term');
     eq(launcher._dots.visible, false);
@@ -487,6 +523,77 @@ check('Escape schliesst den Launcher', () => {
     });
     eq(result, Clutter.EVENT_STOP);
     eq(launcher.actor.visible, false);
+    return true;
+});
+
+check('Pfeil nach unten fuehrt vom Suchfeld ins App-Raster', () => {
+    launcher.show();
+    const result = launcher.actor.emit('key-press-event', {
+        get_key_symbol: () => Clutter.KEY_Down,
+    });
+    eq(result, Clutter.EVENT_STOP, 'Rueckgabe');
+    eq(launcher._focusIndex, 0, 'erste Kachel');
+    eq(launcher._items[0].has_key_focus(), true, 'Fokus liegt auf der Kachel');
+    return true;
+});
+check('Pfeiltasten wandern durch das Raster und zurueck ins Suchfeld', () => {
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Right});
+    eq(launcher._focusIndex, 1, 'rechts');
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Down});
+    eq(launcher._focusIndex, launcher._items.length - 1, 'unten bis zur letzten Kachel');
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Up});
+    eq(launcher._focusIndex, 0, 'hoch in die erste Zeile');
+    const result = launcher.actor.emit('key-press-event', {
+        get_key_symbol: () => Clutter.KEY_Up,
+    });
+    eq(launcher._focusIndex, -1, 'zurueck ins Suchfeld');
+    eq(launcher.entry.has_key_focus(), true, 'Fokus im Suchfeld');
+    eq(result, Clutter.EVENT_STOP, 'Rueckgabe');
+    return true;
+});
+check('Fokus scrollt die Kachel ins Bild und der Seitenpunkt wandert', () => {
+    launcher.show();
+    const adjustment = launcher.scroll.vscroll.adjustment;
+    adjustment.upper = 2000;
+    adjustment.page_size = 500;
+    adjustment.value = 0;
+    adjustment.emit('changed');
+    eq(launcher._dots.get_children().length, 4, 'vier Seiten');
+    // Das Mock legt kein Layout an: Lage und Hoehe der Kacheln so setzen,
+    // wie das echte Raster sie haette (fuenf Spalten, Zeilen zu 500 px).
+    launcher._items.forEach((tile, index) => {
+        tile.set_size(100, 500);
+        tile.set_position(0, Math.floor(index / 5) * 500);
+    });
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Down});
+    eq(launcher._focusIndex, 0, 'erste Kachel');
+    eq(adjustment.value, 0, 'erste Seite bleibt stehen');
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Down});
+    eq(launcher._focusIndex, 5, 'zweite Zeile');
+    eq(adjustment.value, 500, 'eine Seite weitergescrollt');
+    eq(launcher._dots.get_children()[1].has_style_class_name('chromeos-page-dot-active'),
+        true, 'zweiter Punkt aktiv');
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Up});
+    eq(adjustment.value, 0, 'zurueck nach oben');
+    eq(launcher._dots.get_children()[0].has_style_class_name('chromeos-page-dot-active'),
+        true, 'erster Punkt aktiv');
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Up});
+    eq(launcher.entry.has_key_focus(), true, 'Fokus im Suchfeld');
+    return true;
+});
+
+check('Pfeiltasten wandern in den Treffern einzeln', () => {
+    launcher.show();
+    launcher.entry.set_text('e');
+    if (launcher._items.length < 2)
+        throw new Error('zu wenige Treffer fuer die Pruefung');
+    const result = launcher.entry.clutter_text.emit('key-press-event', {
+        get_key_symbol: () => Clutter.KEY_Down,
+    });
+    eq(result, Clutter.EVENT_STOP, 'Rueckgabe');
+    eq(launcher._focusIndex, 0, 'erster Treffer');
+    launcher.actor.emit('key-press-event', {get_key_symbol: () => Clutter.KEY_Down});
+    eq(launcher._focusIndex, 1, 'zweiter Treffer');
     return true;
 });
 
@@ -529,6 +636,18 @@ check('Kontextmenue haengt an einem PopupMenuManager', () => {
     if (!menu._manager.menus.includes(menu._menu))
         throw new Error('Menue nicht beim Manager registriert');
     eq(menu._menu.yPosition, undefined, 'kein totes viertes Argument');
+    return true;
+});
+check('Menue bietet Neues Fenster und startet die App', () => {
+    const button = shelfButton('firefox');
+    button.emit('button-press-event', {get_button: () => 3});
+    const menu = shelf._contextMenu.menu;
+    const labels = menuLabels(menu);
+    if (!labels.includes('Neues Fenster'))
+        throw new Error(`Neues Fenster fehlt: ${labels.join(', ')}`);
+    const before = apps.firefox.opened;
+    menu.items.find(entry => entry.label === 'Neues Fenster').activate();
+    eq(apps.firefox.opened, before + 1, 'open_new_window');
     return true;
 });
 check('Menue entfernt den Favoriten und baut die Shelf neu', () => {
@@ -619,10 +738,25 @@ check('prefer-dark setzt chromeos-dark auf Launcher und Shelf', () => {
     eq(shelf.actor.has_style_class_name('chromeos-dark'), true, 'Shelf');
     return true;
 });
+check('prefer-dark laedt die dunkle Shell-CSS zusaetzlich', () => {
+    const paths = state.themeLoads.map(file => file.path);
+    eq(paths.filter(p => p === THEME_DARK_CSS).length >= 1, true, 'dunkle Fassung geladen');
+    eq(paths[paths.length - 1], THEME_DARK_CSS, 'zuletzt geladen');
+    eq(state.themeUnloads.some(file => file.path === THEME_CSS), true,
+        'helle Fassung vorher abgemeldet');
+    return true;
+});
 check('color-scheme default entfernt die Klasse wieder', () => {
     lastInterfaceSettings()._force('color-scheme', 'default');
     eq(launcher.actor.has_style_class_name('chromeos-dark'), false, 'Launcher');
     eq(shelf.actor.has_style_class_name('chromeos-dark'), false, 'Shelf');
+    return true;
+});
+check('default entlaedt die dunkle Shell-CSS wieder', () => {
+    eq(state.themeUnloads.some(file => file.path === THEME_DARK_CSS), true,
+        'dunkle Fassung abgemeldet');
+    const paths = state.themeLoads.map(file => file.path);
+    eq(paths[paths.length - 1], THEME_CSS, 'zuletzt geladen');
     return true;
 });
 check('Supertaste/Overview oeffnet den Launcher', () => {

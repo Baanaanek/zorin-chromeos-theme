@@ -81,6 +81,15 @@
   background-color: #1a73e8;
 }
 
+/* Die Punkte sind Knoepfe: Klick springt auf die Seite. */
+.chromeos-page-dot:hover {
+  background-color: rgba(60, 64, 67, 0.46);
+}
+
+.chromeos-page-dot:active {
+  background-color: #174ea6;
+}
+
 .chromeos-launcher-content {
   padding: 4px 4px 12px 4px;
 }
@@ -210,6 +219,15 @@
   width: 1px;
   height: 28px;
   margin: 0 6px;
+  background-color: rgba(60, 64, 67, 0.14);
+}
+
+/* Trennt angeheftete von nur laufenden Apps (ChromeOS zeigt hier denselben
+   duennen Strich wie zwischen Launcher-Knopf und Apps). */
+.chromeos-shelf-apps-divider {
+  width: 1px;
+  height: 28px;
+  margin: 0 2px;
   background-color: rgba(60, 64, 67, 0.14);
 }
 
@@ -363,4 +381,16 @@
 
 .chromeos-dark .chromeos-page-dot-active {
   background-color: #8ab4f8;
+}
+
+.chromeos-dark .chromeos-shelf-apps-divider {
+  background-color: rgba(232, 234, 237, 0.16);
+}
+
+.chromeos-dark .chromeos-page-dot:hover {
+  background-color: rgba(232, 234, 237, 0.55);
+}
+
+.chromeos-dark .chromeos-page-dot:active {
+  background-color: #aecbfa;
 }

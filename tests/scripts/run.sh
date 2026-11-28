@@ -77,7 +77,6 @@ DATA="$TEST_HOME/.local/share"
 THEME_DIR="$DATA/themes/$THEME_NAME"
 EXT_DIR="$DATA/gnome-shell/extensions/$UUID"
 HELPER="$TEST_HOME/.local/bin/chromeos-search-url"
-WALLPAPER="$DATA/backgrounds/chromeos-wallpaper.png"
 FONT_DIR="$DATA/fonts/$THEME_NAME"
 STATE_DIR="$TEST_HOME/.local/state/chromeos-theme"
 BACKUP_FILE="$STATE_DIR/settings.tsv"
@@ -106,9 +105,6 @@ printf '%s\t%s\t%s\n' \
     'org.gnome.shell.extensions.ding' 'show-trash' 'true' \
     'org.gnome.shell.extensions.ding' 'show-other-volumes' 'true' \
     'org.gnome.desktop.wm.preferences' 'button-layout' "'appmenu:close'" \
-    'org.gnome.desktop.background' 'picture-uri' "'file:///usr/share/backgrounds/zorin.jpg'" \
-    'org.gnome.desktop.background' 'picture-uri-dark' "'file:///usr/share/backgrounds/zorin.jpg'" \
-    'org.gnome.desktop.background' 'picture-options' "'zoom'" \
     'org.gnome.shell' 'favorite-apps' "['firefox.desktop']" \
     'org.gnome.shell' 'enabled-extensions' "['zorin-dash@zorinos.com', 'zorin-menu@zorinos.com']" \
     > "$TMP/seed.tsv"
@@ -158,18 +154,6 @@ clocks_ok() {
     [ "$(gget org.gnome.desktop.interface clock-show-date)" = 'true' ] &&
         [ "$(gget org.gnome.desktop.interface clock-show-weekday)" = 'true' ] &&
         [ "$(gget org.gnome.desktop.interface clock-show-seconds)" = 'false' ]
-}
-
-background_ok() {
-    case "$(gget org.gnome.desktop.background picture-uri)" in
-        file://*chromeos-wallpaper.png) ;;
-        *) return 1 ;;
-    esac
-    case "$(gget org.gnome.desktop.background picture-uri-dark)" in
-        file://*chromeos-wallpaper.png) ;;
-        *) return 1 ;;
-    esac
-    [ "$(gget org.gnome.desktop.background picture-options)" = 'zoom' ]
 }
 
 fonts_ok() {
@@ -259,6 +243,29 @@ check 'Shell-Theme gestaltet den Sperrbildschirm' bash -c '
     grep -q "login-dialog-prompt-entry" "$1" &&
     grep -q "unlock-dialog-notification-source" "$1"' \
     _ "$REPO/theme/ChromeOS/gnome-shell/gnome-shell.css"
+check 'dunkle Shell-CSS deckt Popups, Kalender, Sperrbildschirm und Dialoge ab' bash -c '
+    grep -q "\.popup-menu-content" "$1" &&
+    grep -q "\.calendar-day" "$1" &&
+    grep -q "\.unlock-dialog" "$1" &&
+    grep -q "\.modal-dialog" "$1"' \
+    _ "$REPO/theme/ChromeOS/gnome-shell/gnome-shell-dark.css"
+check 'Shell-Theme deckt Schnelleinstellungen, Benachrichtigungen und Screenshot-UI ab' bash -c '
+    grep -qF ".quick-toggle" "$1" &&
+    grep -qF ".message .message-media-control" "$1" &&
+    grep -qF ".screenshot-ui-panel" "$1" &&
+    grep -qF ".screenshot-ui-capture-button" "$1"' \
+    _ "$REPO/theme/ChromeOS/gnome-shell/gnome-shell.css"
+check 'dunkle Shell-CSS deckt Screenshot-UI, OSD und Medienzeile ab' bash -c '
+    grep -qF ".screenshot-ui-panel" "$1" &&
+    grep -qF ".screenshot-ui-type-button:checked" "$1" &&
+    grep -qF ".osd-window" "$1" &&
+    grep -qF ".message .message-media-control" "$1"' \
+    _ "$REPO/theme/ChromeOS/gnome-shell/gnome-shell-dark.css"
+check 'GTK-3-Themes decken Infoleisten, Werkzeugleisten und Dateiauswahl ab' bash -c '
+    grep -q "^infobar" "$1" && grep -q "^toolbar" "$1" &&
+    grep -q "^infobar" "$2" && grep -q "^toolbar" "$2" &&
+    grep -q "placessidebar row:selected" "$2"' \
+    _ "$REPO/theme/ChromeOS/gtk-3.0/gtk.css" "$REPO/theme/ChromeOS/gtk-3.0/gtk-dark.css"
 
 # --- 1. Probelauf ----------------------------------------------------------
 run_stub install.sh --dry-run >"$OUT" 2>"$ERR"
@@ -266,7 +273,6 @@ check 'Dry-Run endet mit 0' eq "$?" 0
 check 'Dry-Run legt kein Theme an' missing "$THEME_DIR"
 check 'Dry-Run legt keine Extension an' missing "$EXT_DIR"
 check 'Dry-Run legt keinen Helfer an' missing "$HELPER"
-check 'Dry-Run legt kein Hintergrundbild an' missing "$WALLPAPER"
 check 'Dry-Run legt keinen Zustandsordner an' missing "$STATE_DIR"
 check 'Dry-Run legt keinen Cursor-Satz an' missing "$ICON_DIR"
 check 'Dry-Run laesst die GTK-4-Datei des Nutzers stehen' has_text "$GTK4_FILE" 'eigene Anpassung'
@@ -297,17 +303,15 @@ check 'Theme-Ordner existiert' exists "$THEME_DIR"
 check 'GTK-3-, GTK-4- und Shell-Theme liegen bereit' \
     bash -c '[ -f "$1/gtk-3.0/gtk.css" ] && [ -f "$1/gtk-4.0/gtk.css" ] && [ -f "$1/gnome-shell/gnome-shell.css" ]' \
     _ "$THEME_DIR"
+check 'dunkle Shell-CSS installiert' exists "$THEME_DIR/gnome-shell/gnome-shell-dark.css"
 check 'Theme ist markiert' has_text "$THEME_DIR/.chromeos-theme" 'chromeos-theme'
 check 'installiertes Theme enthaelt die Sperrbildschirm-Regeln' lock_css_ok
 check 'Extension mit allen Dateien installiert' extension_files_ok
 check 'Suchhelfer installiert und ausfuehrbar' bash -c '[ -x "$1" ]' _ "$HELPER"
-check 'Hintergrundbild installiert' exists "$WALLPAPER"
-check 'Hintergrund ist ein eigenes PNG' \
-    bash -c '[ "$(od -An -tx1 -N4 "$1" | tr -d " \n")" = "89504e47" ]' _ "$WALLPAPER"
-check 'Sicherung enthaelt 22 Einstellungen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 22 ]' _ "$BACKUP_FILE"
+check 'Sicherung enthaelt 19 Einstellungen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 19 ]' _ "$BACKUP_FILE"
 check 'installierte Teile festgehalten' bash -c '
-    for part in theme extension helper settings wallpaper cursor gtk4 fonts; do
+    for part in theme extension helper settings cursor gtk4 fonts; do
         grep -qxF "$part" "$1" || exit 1
     done' _ "$STATE_DIR/components.txt"
 check 'Schrift Roboto liegt im Benutzerordner' bash -c '
@@ -321,7 +325,6 @@ check 'Uhr: Datum und Wochentag an, Sekunden aus' clocks_ok
 check 'Fensterknoepfe rechts' \
     gset org.gnome.desktop.wm.preferences button-layout ':minimize,maximize,close'
 check 'Schrift ist Roboto 11' gset org.gnome.desktop.interface font-name 'Roboto 11'
-check 'Hintergrund ist gesetzt' background_ok
 check 'Mauszeiger-Satz installiert und markiert' cursor_ok
 check 'Cursor-Theme erbt Adwaita' has_text "$ICON_DIR/index.theme" 'Inherits=Adwaita'
 check 'cursor-theme ist ChromeOS' gset org.gnome.desktop.interface cursor-theme 'ChromeOS'
@@ -343,12 +346,18 @@ check 'Installation meldet "Fertig."' has_text "$OUT" 'Fertig.'
 run_stub install.sh --check >"$OUT" 2>"$ERR"
 check '--check ist nach der Installation gruen' eq "$?" 0
 check '--check meldet "Alles wie erwartet"' has_text "$OUT" 'Alles wie erwartet'
+DARK_CSS="$THEME_DIR/gnome-shell/gnome-shell-dark.css"
+mv "$DARK_CSS" "$THEME_DIR/gnome-shell/dark.css.bak"
+run_stub install.sh --check >"$OUT" 2>"$ERR"
+check '--check faellt ohne dunkle Shell-CSS durch' eq "$?" 1
+check '--check nennt die fehlende dunkle Shell-CSS' has_text "$ERR" 'Shell-Theme dunkel'
+mv "$THEME_DIR/gnome-shell/dark.css.bak" "$DARK_CSS"
 
 # --- 4. Zweiter Lauf (idempotent) -----------------------------------------
 run_stub install.sh >"$OUT" 2>"$ERR"
 check 'zweiter Lauf endet mit 0' eq "$?" 0
-check 'Sicherung bleibt bei 22 Eintraegen' \
-    bash -c '[ "$(wc -l < "$1")" -eq 22 ]' _ "$BACKUP_FILE"
+check 'Sicherung bleibt bei 19 Eintraegen' \
+    bash -c '[ "$(wc -l < "$1")" -eq 19 ]' _ "$BACKUP_FILE"
 check 'kein Theme-Backup und keine Dopplung' \
     bash -c '[ -d "$1" ] && [ ! -e "$1.bak" ]' _ "$THEME_DIR"
 
@@ -371,13 +380,13 @@ check 'Uninstall-Dry-Run laesst Cursor und GTK-4 stehen' \
 run_stub uninstall.sh >"$OUT" 2>"$ERR"
 check 'Deinstallation endet mit 0' eq "$?" 0
 check 'Theme-Ordner entfernt' missing "$THEME_DIR"
-check 'Extension, Helfer und Hintergrund entfernt' \
-    bash -c '[ ! -e "$1" ] && [ ! -e "$2" ] && [ ! -e "$3" ]' \
-    _ "$EXT_DIR" "$HELPER" "$WALLPAPER"
+check 'Extension und Helfer entfernt' \
+    bash -c '[ ! -e "$1" ] && [ ! -e "$2" ]' \
+    _ "$EXT_DIR" "$HELPER"
 check 'Zustandsordner entfernt' missing "$STATE_DIR"
 check 'Mauszeiger-Satz entfernt' missing "$ICON_DIR"
 check 'Schriften entfernt' missing "$FONT_DIR"
-check 'alle 22 Einstellungen exakt wiederhergestellt' settings_restored
+check 'alle 19 Einstellungen exakt wiederhergestellt' settings_restored
 check 'vorher nie gesetzte Keys bleiben ungesetzt' unset_after_uninstall
 check 'keine zusaetzlichen Keys in der Datenbank' no_extra_keys
 check 'GTK-4-Datei des Nutzers unveraendert zurueck' has_text "$GTK4_FILE" 'eigene Anpassung'
@@ -423,8 +432,8 @@ check '--settings-only behaelt den Zustandsordner' exists "$STATE_DIR"
 run_stub uninstall.sh >"$OUT" 2>"$ERR"
 check 'zweite Deinstallation endet mit 0' eq "$?" 0
 check 'zweite Deinstallation entfernt den Rest' \
-    bash -c '[ ! -e "$1" ] && [ ! -e "$2" ] && [ ! -e "$3" ]' \
-    _ "$THEME_DIR" "$FONT_DIR" "$WALLPAPER"
+    bash -c '[ ! -e "$1" ] && [ ! -e "$2" ]' \
+    _ "$THEME_DIR" "$FONT_DIR"
 check 'nie installierter Cursor bleibt unberuehrt' missing "$ICON_DIR"
 check 'GTK-4-Datei des Nutzers bleibt beim zweiten Lauf heil' \
     has_text "$GTK4_FILE" 'eigene Anpassung'

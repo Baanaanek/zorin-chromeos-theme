@@ -16,4 +16,8 @@ export default {
     EVENT_PROPAGATE: false,
     KEY_Escape: 'Escape',
     KEY_Return: 'Return',
+    KEY_Up: 'Up',
+    KEY_Down: 'Down',
+    KEY_Left: 'Left',
+    KEY_Right: 'Right',
 };

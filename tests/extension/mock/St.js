@@ -84,6 +84,16 @@ export class Actor extends SignalSource {
         return this._parent;
     }
 
+    // Wie St: der zuletzt fokussierte Actor; der Harness prueft damit, wohin
+    // die Tastaturnavigation springt.
+    grab_key_focus() {
+        state.keyFocus = this;
+    }
+
+    has_key_focus() {
+        return state.keyFocus === this;
+    }
+
     destroy_all_children() {
         for (const child of [...this._children])
             child.destroy();
@@ -138,6 +148,12 @@ export class Actor extends SignalSource {
         return [this.width || 100, this._preferredHeight];
     }
 
+    // Im Mock gibt es kein Layout; die Position ist die gesetzte. Der
+    // Harness setzt sie, wo er das Scrollen prueft.
+    get_transformed_position() {
+        return [this.x, this.y];
+    }
+
     add_style_class_name(name) {
         this.styleClasses.add(name);
     }
@@ -150,7 +166,14 @@ export class Actor extends SignalSource {
         return this.styleClasses.has(name);
     }
 
-    grab_key_focus() {}
+    grab_key_focus() {
+        state.keyFocus = this;
+    }
+
+    has_key_focus() {
+        return state.keyFocus === this;
+    }
+
     set_child() {}
     get_text() {
         return this._text;

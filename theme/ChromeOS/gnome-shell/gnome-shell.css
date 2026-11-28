@@ -354,6 +354,19 @@ stage {
   spacing: 8px;
 }
 
+/* Medienzeile in einer Benachrichtigung (Zurueck/Play/Weiter). */
+.message .message-media-control {
+  border-radius: 999px;
+  padding: 4px 10px;
+  background-color: rgba(26, 115, 232, 0.12);
+  color: #174ea6;
+}
+
+.message .message-media-control:hover,
+.message .message-media-control:focus {
+  background-color: rgba(26, 115, 232, 0.20);
+}
+
 /* ------------------------------------------------------------------ */
 /* App-Raster / Uebersicht                                             */
 /* ------------------------------------------------------------------ */
@@ -615,6 +628,197 @@ stage {
 }
 
 /* ------------------------------------------------------------------ */
+/* Screenshot-UI (Super+Druck)                                         */
+/* GNOME zeichnet die Werkzeugleiste als dunkles OSD; ChromeOS legt sie */
+/* als schwebende Karte unten in die Mitte und faerbt die Auswahl im    */
+/* Akzent. Abgedeckt: Panel, Schliessen, Modus-Knoepfe, Ausloeser,      */
+/* Geraeteauswahl, Zeiger-Knopf, Auswahlrahmen, Fenster- und            */
+/* Bildschirmwahl, Tooltip.                                             */
+/* ------------------------------------------------------------------ */
+.screenshot-ui-panel {
+  border-radius: 24px;
+  background-color: rgba(248, 249, 250, 0.99);
+  color: #202124;
+  border: 1px solid rgba(60, 64, 67, 0.12);
+  box-shadow: 0 4px 8px 3px rgba(60, 64, 67, 0.18);
+  padding: 12px 18px 10px 18px;
+  margin-bottom: 3em;
+  spacing: 12px;
+}
+
+.screenshot-ui-close-button {
+  border-radius: 999px;
+  background-color: rgba(60, 64, 67, 0.08);
+  color: #202124;
+  padding: 8px;
+  box-shadow: none;
+}
+
+.screenshot-ui-close-button:hover,
+.screenshot-ui-close-button:focus {
+  background-color: rgba(60, 64, 67, 0.16);
+}
+
+.screenshot-ui-type-button {
+  min-width: 48px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  color: #202124;
+}
+
+.screenshot-ui-type-button:hover,
+.screenshot-ui-type-button:focus {
+  background-color: rgba(60, 64, 67, 0.10);
+}
+
+.screenshot-ui-type-button:checked {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+.screenshot-ui-type-button:checked:hover {
+  background-color: #1b66c9;
+}
+
+/* Ausloeser: Ring mit Punkt innen; beim Aufnehmen rot wie in ChromeOS. */
+.screenshot-ui-capture-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 3px solid #202124;
+  padding: 4px;
+}
+
+.screenshot-ui-capture-button .screenshot-ui-capture-button-circle {
+  border-radius: 999px;
+  background-color: #202124;
+}
+
+.screenshot-ui-capture-button:hover .screenshot-ui-capture-button-circle,
+.screenshot-ui-capture-button:focus .screenshot-ui-capture-button-circle {
+  background-color: #3c4043;
+}
+
+.screenshot-ui-capture-button:active .screenshot-ui-capture-button-circle {
+  background-color: #000000;
+}
+
+.screenshot-ui-capture-button:cast .screenshot-ui-capture-button-circle {
+  background-color: #d93025;
+}
+
+.screenshot-ui-shot-cast-container {
+  border-radius: 999px;
+  background-color: rgba(60, 64, 67, 0.08);
+  padding: 3px;
+  spacing: 3px;
+}
+
+.screenshot-ui-shot-cast-button {
+  border-radius: 999px;
+  background-color: transparent;
+  color: #202124;
+  padding: 6px 12px;
+}
+
+.screenshot-ui-shot-cast-button:hover,
+.screenshot-ui-shot-cast-button:focus {
+  background-color: rgba(60, 64, 67, 0.14);
+}
+
+.screenshot-ui-shot-cast-button:active {
+  background-color: rgba(60, 64, 67, 0.24);
+}
+
+.screenshot-ui-shot-cast-button:checked {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+.screenshot-ui-shot-cast-button:insensitive {
+  color: rgba(32, 33, 36, 0.5);
+}
+
+.screenshot-ui-show-pointer-button {
+  border-radius: 999px;
+  color: #202124;
+  padding: 8px;
+}
+
+.screenshot-ui-show-pointer-button:hover,
+.screenshot-ui-show-pointer-button:focus {
+  background-color: rgba(60, 64, 67, 0.10);
+}
+
+/* Auswahlrahmen: abgedunkelter Rand, weisse Kante, runde Griffe. */
+.screenshot-ui-area-indicator-shade {
+  background-color: rgba(0, 0, 0, 0.30);
+}
+
+.screenshot-ui-area-selector .screenshot-ui-area-indicator-shade {
+  background-color: rgba(0, 0, 0, 0.50);
+}
+
+.screenshot-ui-area-selector .screenshot-ui-area-indicator-selection {
+  border: 2px solid #ffffff;
+}
+
+.screenshot-ui-area-selector-handle {
+  border-radius: 999px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px 2px rgba(60, 64, 67, 0.32);
+}
+
+/* Fensterwahl: helle Flaeche dahinter, Auswahl im Akzent. */
+.screenshot-ui-window-selector {
+  background-color: #f8f9fa;
+}
+
+.screenshot-ui-window-selector-window-border {
+  border: 4px solid transparent;
+  border-radius: 16px;
+}
+
+.screenshot-ui-window-selector-window:hover .screenshot-ui-window-selector-window-border {
+  border-color: rgba(26, 115, 232, 0.60);
+}
+
+.screenshot-ui-window-selector-window:checked .screenshot-ui-window-selector-window-border {
+  border-color: #1a73e8;
+  background-color: rgba(26, 115, 232, 0.10);
+}
+
+.screenshot-ui-window-selector-check {
+  border-radius: 999px;
+  color: #ffffff;
+  background-color: #1a73e8;
+}
+
+.screenshot-ui-screen-selector {
+  background-color: rgba(0, 0, 0, 0.50);
+}
+
+.screenshot-ui-screen-selector:hover {
+  background-color: rgba(0, 0, 0, 0.30);
+}
+
+.screenshot-ui-screen-selector:active {
+  background-color: rgba(0, 0, 0, 0.70);
+}
+
+.screenshot-ui-screen-selector:checked {
+  background-color: transparent;
+  border: 2px solid #ffffff;
+}
+
+.screenshot-ui-tooltip {
+  border-radius: 8px;
+  padding: 4px 10px;
+  background-color: rgba(60, 64, 67, 0.95);
+  color: #ffffff;
+}
+
+/* ------------------------------------------------------------------ */
 /* Screenshot-/Bildschirmtastatur-Reste                                */
 /* ------------------------------------------------------------------ */
 .keyboard-key {
@@ -671,24 +875,135 @@ stage {
   font-weight: 400;
 }
 
+/* Schleier: GNOME dunkelt das Bild nur auf 65 % Helligkeit ab, weisse
+   Schrift kommt damit auf einem hellen Motiv auf 2,5:1. ChromeOS legt einen
+   dunklen Schleier darueber. Er ist der Untergrund fuer Uhr, Eingabe,
+   Kontoliste und Benachrichtigungen, und tools/check-contrast.mjs rechnet
+   dagegen (hellstes Hintergrundbild, 255). */
+.unlock-dialog {
+  background-color: rgba(32, 33, 36, 0.80);
+}
+
+/* Uhr, Datum und Hinweis: GNOME zeichnet sie weiss mit Textschatten; hier
+   stehen die Farben fest, damit sie zum Schleier passen. ChromeOS zeigt die
+   Uhr duenn und gross, das Datum eine Stufe kleiner. */
+.unlock-dialog-clock .unlock-dialog-clock-time {
+  color: #ffffff;
+  font-weight: 300;
+}
+
+.unlock-dialog-clock .unlock-dialog-clock-date {
+  color: #e8eaed;
+}
+
+.unlock-dialog-clock .unlock-dialog-clock-hint {
+  color: #e8eaed;
+}
+
 /* Passwortfeld: dunkle Flaeche statt der hellen 10-%-Flaeche von GNOME.
-   Radius (8 px), Innenabstand und weisse Schrift kommen von GNOME; einen
-   Weiter-Pfeil neben dem Feld gibt die GNOME-Struktur nicht her. */
+   Radius (8 px) und Innenabstand kommen von GNOME; einen Weiter-Pfeil neben
+   dem Feld gibt die GNOME-Struktur nicht her. */
 .unlock-dialog .login-dialog-prompt-entry {
-  background-color: rgba(60, 64, 67, 0.72);
+  background-color: rgba(60, 64, 67, 0.78);
+  color: #ffffff;
 }
 
-/* Benachrichtigungen: dunkle Karten statt heller 10-%-Karten, kritische
-   in Rot wie in ChromeOS. */
+/* Fokus im Feld: dichtere Flaeche und blauer Ring wie in ChromeOS. */
+.unlock-dialog .login-dialog-prompt-entry:focus {
+  background-color: rgba(60, 64, 67, 0.90);
+  color: #ffffff;
+  box-shadow: inset 0 0 0 2px #8ab4f8;
+}
+
+/* Entsperren-/Weiter-Knopf: GNOME nutzt eine helle Flaeche, ChromeOS den
+   Akzent. */
+.unlock-dialog .button,
+.unlock-dialog .modal-dialog-button {
+  background-color: #1a73e8;
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+}
+
+.unlock-dialog .button:hover,
+.unlock-dialog .modal-dialog-button:hover {
+  background-color: #1b66c9;
+}
+
+.unlock-dialog .button:focus,
+.unlock-dialog .modal-dialog-button:focus {
+  background-color: #174ea6;
+}
+
+/* Kontoliste auf dem Sperrbildschirm: dieselben Karten wie die
+   Benachrichtigungen, die Auswahl im Akzent. */
+.unlock-dialog .login-dialog-user-list-view {
+  -st-vfade-offset: 1em;
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item {
+  background-color: rgba(60, 64, 67, 0.78);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:hover {
+  background-color: rgba(95, 99, 104, 0.85);
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:focus,
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:selected,
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:active {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+/* Angemeldetes Konto: blauer Rand am Bild, Ladebalken darunter. */
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:logged-in .user-icon {
+  border-color: #8ab4f8;
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item .login-dialog-timed-login-indicator {
+  background-color: #8ab4f8;
+}
+
+/* Benachrichtigungen: dunkle Karten statt heller 10-%-Karten, kritische in
+   Rot wie in ChromeOS. */
+.unlock-dialog-notifications-container .notification,
 .unlock-dialog-notifications-container .unlock-dialog-notification-source {
-  background-color: rgba(32, 33, 36, 0.62);
+  background-color: rgba(32, 33, 36, 0.78);
+  color: #ffffff;
 }
 
+.unlock-dialog-notifications-container .notification.critical,
 .unlock-dialog-notifications-container .unlock-dialog-notification-source.critical {
-  background-color: rgba(179, 38, 30, 0.78);
+  background-color: rgba(179, 38, 30, 0.92);
+  color: #ffffff;
 }
 
-/* Fehlermeldung: GNOME zeichnet sie wie den Hinweistext in Weiss. */
+/* Medienzeile (Titel, Interpret, Zurueck/Play/Weiter) sitzt im selben
+   Bereich wie die Benachrichtigungen. */
+.unlock-dialog-notifications-container .message-media-control {
+  background-color: rgba(60, 64, 67, 0.78);
+  color: #ffffff;
+}
+
+.unlock-dialog-notifications-container .message-media-control:hover,
+.unlock-dialog-notifications-container .message-media-control:focus {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+/* Anzahl-Anzeige ueber den Benachrichtigungen. */
+.unlock-dialog-notification-count-text {
+  background-color: rgba(60, 64, 67, 0.78);
+  color: #ffffff;
+}
+
+/* Fehlermeldung bei falschem Passwort: GNOME schreibt sie weiss, #f28b82 kam
+   auf dem Schleier nur auf 2,9:1. Deshalb das hellere Rot aus dem restlichen
+   Dunkel-Theme. */
 .unlock-dialog .login-dialog-message-warning {
-  color: #f28b82;
+  color: #f2b8b5;
 }

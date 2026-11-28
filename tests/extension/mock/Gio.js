@@ -8,11 +8,22 @@ const DEFAULTS = {
 
 export const settingsInstances = [];
 
+// Wie dconf: alle Instanzen desselben Schemas sehen denselben Wert und
+// bekommen dieselben Aenderungssignale. Sonst saehe theme.js einen Wechsel
+// nicht, nur weil die Extension eine eigene Gio.Settings-Instanz haelt.
+const stores = new Map();
+
+function storeFor(schemaId) {
+    if (!stores.has(schemaId))
+        stores.set(schemaId, new Map(Object.entries(DEFAULTS[schemaId] ?? {})));
+    return stores.get(schemaId);
+}
+
 export class Settings extends SignalSource {
     constructor(params = {}) {
         super(true);
         this.schema_id = params.schema_id;
-        this._values = new Map(Object.entries(DEFAULTS[this.schema_id] ?? {}));
+        this._values = storeFor(this.schema_id);
         settingsInstances.push(this);
     }
 
@@ -21,14 +32,20 @@ export class Settings extends SignalSource {
     }
 
     set_string(key, value) {
-        this._values.set(key, value);
-        this.emit(`changed::${key}`);
+        this._set(key, value);
     }
 
     // Nur fuer den Harness.
     _force(key, value) {
+        this._set(key, value);
+    }
+
+    _set(key, value) {
         this._values.set(key, value);
-        this.emit(`changed::${key}`);
+        for (const settings of settingsInstances) {
+            if (settings.schema_id === this.schema_id)
+                settings.emit(`changed::${key}`);
+        }
     }
 }
 

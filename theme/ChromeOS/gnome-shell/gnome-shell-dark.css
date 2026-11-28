@@ -1,0 +1,694 @@
+/* ChromeOS-Look fuer Zorin OS - GNOME Shell 45-48, dunkle Variante
+ *
+ * Wird von der Extension zusaetzlich zu gnome-shell.css geladen, wenn
+ * org.gnome.desktop.interface color-scheme "prefer-dark" ist. St (die
+ * CSS-Engine der Shell) kennt keine @media-Abfragen; deshalb zwei Dateien
+ * statt eines prefers-color-scheme-Blocks.
+ *
+ * Diese Datei setzt nur Farben; Radien, Abstaende und Groessen kommen aus
+ * gnome-shell.css. Die Selektoren sind dieselben, damit die dunkle Fassung
+ * die helle Regel fuer Regel ueberschreibt.
+ *
+ * Inoffiziell, keine Verbindung zu Google.
+ */
+
+stage {
+  color: #e8eaed;
+}
+
+/* ------------------------------------------------------------------ */
+/* Obere Leiste - wird von der Extension ausgeblendet                  */
+/* ------------------------------------------------------------------ */
+#panel .panel-button {
+  color: #e8eaed;
+}
+
+#panel .panel-button:hover {
+  background-color: rgba(232, 234, 237, 0.10);
+}
+
+#panel .panel-button:active,
+#panel .panel-button:checked {
+  background-color: rgba(232, 234, 237, 0.16);
+}
+
+/* ------------------------------------------------------------------ */
+/* Popups, Menues                                                      */
+/* ------------------------------------------------------------------ */
+.popup-menu-boxpointer {
+  -arrow-background-color: #202124;
+}
+
+.popup-menu-content {
+  background-color: #202124;
+  color: #e8eaed;
+  box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.popup-menu-item {
+  color: #e8eaed;
+}
+
+.popup-menu-item:hover,
+.popup-menu-item:focus {
+  background-color: rgba(232, 234, 237, 0.08);
+}
+
+.popup-menu-item:active {
+  background-color: rgba(232, 234, 237, 0.14);
+}
+
+.popup-menu-item:checked {
+  background-color: rgba(138, 180, 248, 0.16);
+  color: #d2e3fc;
+}
+
+.popup-menu-item:insensitive {
+  color: #9aa0a6;
+}
+
+.popup-separator-menu-item .popup-separator-menu-item-separator {
+  background-color: rgba(232, 234, 237, 0.12);
+}
+
+.popup-sub-menu {
+  background-color: #292a2d;
+}
+
+.popup-menu-ornament {
+  color: #9aa0a6;
+}
+
+.popup-menu-arrow {
+  color: #9aa0a6;
+}
+
+/* ------------------------------------------------------------------ */
+/* Schnelleinstellungen (ChromeOS-Tray-Optik)                          */
+/* ------------------------------------------------------------------ */
+.quick-toggle {
+  background-color: rgba(232, 234, 237, 0.08);
+  color: #e8eaed;
+}
+
+.quick-toggle:hover {
+  background-color: rgba(232, 234, 237, 0.14);
+}
+
+.quick-toggle:checked {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.quick-toggle:checked:hover {
+  background-color: #aecbfa;
+}
+
+.quick-toggle:checked .quick-toggle-subtitle {
+  color: #202124;
+}
+
+.quick-toggle-subtitle {
+  color: #9aa0a6;
+}
+
+.quick-toggle-arrow {
+  color: #9aa0a6;
+}
+
+.quick-toggle:checked .quick-toggle-arrow {
+  color: #202124;
+}
+
+.quick-toggle-menu {
+  background-color: #202124;
+  color: #e8eaed;
+}
+
+.quick-toggle-menu .header .title {
+  color: #e8eaed;
+}
+
+.quick-toggle-menu .header .subtitle {
+  color: #9aa0a6;
+}
+
+.quick-settings-system-item .icon-button {
+  color: #e8eaed;
+}
+
+.quick-settings-system-item .icon-button:hover {
+  background-color: rgba(232, 234, 237, 0.10);
+}
+
+.slider {
+  -barlevel-background-color: rgba(138, 180, 248, 0.24);
+  -barlevel-active-background-color: #8ab4f8;
+  -barlevel-overdrive-color: #f28b82;
+  color: #8ab4f8;
+}
+
+.icon-button {
+  color: #e8eaed;
+}
+
+.toggle-switch {
+  background-color: rgba(232, 234, 237, 0.24);
+}
+
+.toggle-switch:checked {
+  background-color: #8ab4f8;
+}
+
+.toggle-switch > StBin {
+  background-color: #e8eaed;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* ------------------------------------------------------------------ */
+/* Kalender / Datumsmenue                                              */
+/* ------------------------------------------------------------------ */
+.datemenu-today-button:hover {
+  background-color: rgba(232, 234, 237, 0.08);
+}
+
+.calendar-month-label {
+  color: #e8eaed;
+}
+
+.calendar-weekday,
+.calendar-day-heading {
+  color: #9aa0a6;
+}
+
+.calendar-day {
+  color: #e8eaed;
+}
+
+.calendar-day:hover {
+  background-color: rgba(232, 234, 237, 0.10);
+}
+
+.calendar-day:selected {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.calendar-day:selected:hover {
+  background-color: #aecbfa;
+}
+
+.calendar-today {
+  color: #8ab4f8;
+}
+
+.calendar-other-month-day {
+  color: #9aa0a6;
+}
+
+.events-button,
+.world-clocks-button,
+.weather-button {
+  background-color: rgba(232, 234, 237, 0.06);
+  color: #e8eaed;
+}
+
+.events-button:hover,
+.world-clocks-button:hover,
+.weather-button:hover {
+  background-color: rgba(232, 234, 237, 0.10);
+}
+
+/* ------------------------------------------------------------------ */
+/* Benachrichtigungen                                                  */
+/* ------------------------------------------------------------------ */
+.notification-banner,
+.message {
+  background-color: #292a2d;
+  color: #e8eaed;
+  box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.55);
+}
+
+.notification-banner:hover,
+.message:hover {
+  background-color: #303134;
+}
+
+.notification-banner .notification-button,
+.message .message-button {
+  background-color: rgba(138, 180, 248, 0.16);
+  color: #8ab4f8;
+}
+
+.message-title {
+  color: #e8eaed;
+}
+
+.message-body,
+.message-content {
+  color: #9aa0a6;
+}
+
+.message .message-media-control {
+  background-color: rgba(138, 180, 248, 0.16);
+  color: #8ab4f8;
+}
+
+.message .message-media-control:hover,
+.message .message-media-control:focus {
+  background-color: rgba(138, 180, 248, 0.26);
+}
+
+/* ------------------------------------------------------------------ */
+/* App-Raster / Uebersicht                                             */
+/* ------------------------------------------------------------------ */
+.app-well-app:hover .overview-icon,
+.app-well-app:focus .overview-icon {
+  background-color: rgba(232, 234, 237, 0.10);
+}
+
+.app-well-app:active .overview-icon,
+.app-well-app:selected .overview-icon {
+  background-color: rgba(232, 234, 237, 0.16);
+}
+
+.app-well-app-running-dot {
+  background-color: #8ab4f8;
+}
+
+.app-folder .overview-icon,
+.app-folder-icon {
+  background-color: rgba(41, 42, 45, 0.85);
+}
+
+.app-folder-dialog {
+  background-color: #292a2d;
+  color: #e8eaed;
+  box-shadow: 0 8px 24px 3px rgba(0, 0, 0, 0.6);
+}
+
+.page-indicator .page-indicator-icon {
+  background-color: rgba(232, 234, 237, 0.28);
+}
+
+.page-indicator:hover .page-indicator-icon {
+  background-color: rgba(232, 234, 237, 0.46);
+}
+
+.page-indicator:checked .page-indicator-icon,
+.page-indicator:active .page-indicator-icon {
+  background-color: #8ab4f8;
+}
+
+.search-entry {
+  background-color: #292a2d;
+  color: #e8eaed;
+  border: 1px solid rgba(232, 234, 237, 0.14);
+}
+
+.search-entry:focus {
+  border-color: #8ab4f8;
+  box-shadow: 0 1px 6px rgba(138, 180, 248, 0.35);
+}
+
+.search-entry .search-entry-icon {
+  color: #9aa0a6;
+}
+
+.search-statustext,
+.no-frequent-applications-label {
+  color: #9aa0a6;
+}
+
+.search-section-content {
+  background-color: rgba(41, 42, 45, 0.85);
+}
+
+.list-search-result:hover,
+.list-search-result:focus {
+  background-color: rgba(232, 234, 237, 0.08);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dash (GNOME-Dock, falls aktiv)                                      */
+/* ------------------------------------------------------------------ */
+#dash {
+  background-color: rgba(41, 42, 45, 0.88);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
+.dash-label {
+  background-color: #3c4043;
+  color: #e8eaed;
+}
+
+/* ------------------------------------------------------------------ */
+/* Fensterliste, Arbeitsflaechen                                       */
+/* ------------------------------------------------------------------ */
+.window-caption {
+  background-color: rgba(32, 33, 36, 0.92);
+  color: #e8eaed;
+}
+
+.window-close {
+  background-color: #d93025;
+  color: #ffffff;
+}
+
+.window-close:hover {
+  background-color: #b3261e;
+}
+
+.workspace-thumbnail-indicator {
+  border: 2px solid #8ab4f8;
+  background-color: rgba(138, 180, 248, 0.10);
+}
+
+.workspace-thumbnails {
+  background-color: rgba(41, 42, 45, 0.55);
+}
+
+.tile-preview {
+  background-color: rgba(138, 180, 248, 0.24);
+  border: 1px solid #8ab4f8;
+}
+
+.tile-preview.snap {
+  background-color: rgba(138, 180, 248, 0.36);
+}
+
+/* ------------------------------------------------------------------ */
+/* OSD (Lautstaerke, Helligkeit)                                       */
+/* ------------------------------------------------------------------ */
+.osd-window {
+  background-color: #202124;
+  color: #e8eaed;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+.osd-window .level {
+  background-color: rgba(232, 234, 237, 0.24);
+}
+
+.osd-window .level-bar {
+  background-color: #8ab4f8;
+}
+
+.osd-monitor-label {
+  background-color: rgba(32, 33, 36, 0.92);
+  color: #e8eaed;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dialoge                                                            */
+/* ------------------------------------------------------------------ */
+.modal-dialog {
+  background-color: #292a2d;
+  color: #e8eaed;
+  box-shadow: 0 8px 24px 3px rgba(0, 0, 0, 0.6);
+}
+
+.modal-dialog .modal-dialog-linked-button {
+  color: #8ab4f8;
+}
+
+.modal-dialog .modal-dialog-linked-button:hover {
+  background-color: rgba(138, 180, 248, 0.14);
+}
+
+.modal-dialog .modal-dialog-linked-button:last-child {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.modal-dialog .modal-dialog-linked-button:last-child:hover {
+  background-color: #aecbfa;
+}
+
+#LookingGlassDialog {
+  background-color: #202124;
+  color: #e8eaed;
+}
+
+/* ------------------------------------------------------------------ */
+/* Bildschirmtastatur-Reste                                            */
+/* ------------------------------------------------------------------ */
+.keyboard-key {
+  background-color: #292a2d;
+  color: #e8eaed;
+  border: 1px solid rgba(232, 234, 237, 0.14);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.keyboard-key:active {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+/* ------------------------------------------------------------------ */
+/* Barrierefreiheits-/Hot-Corner-Elemente                               */
+/* ------------------------------------------------------------------ */
+.ripple-box {
+  background-color: rgba(138, 180, 248, 0.25);
+  border: 2px solid #8ab4f8;
+}
+
+/* ------------------------------------------------------------------ */
+/* Screenshot-UI (Super+Druck)                                         */
+/* Dieselben Flaechen wie in der hellen Fassung, nur dunkel: das Panel  */
+/* traegt die Popup-Farbe, die Auswahl bleibt im hellen Akzent.          */
+/* ------------------------------------------------------------------ */
+.screenshot-ui-panel {
+  background-color: #292a2d;
+  color: #e8eaed;
+  border: 1px solid rgba(232, 234, 237, 0.14);
+  box-shadow: 0 4px 8px 3px rgba(0, 0, 0, 0.55);
+}
+
+.screenshot-ui-close-button {
+  background-color: rgba(232, 234, 237, 0.10);
+  color: #e8eaed;
+  box-shadow: none;
+}
+
+.screenshot-ui-close-button:hover,
+.screenshot-ui-close-button:focus {
+  background-color: rgba(232, 234, 237, 0.18);
+}
+
+.screenshot-ui-type-button {
+  color: #e8eaed;
+}
+
+.screenshot-ui-type-button:hover,
+.screenshot-ui-type-button:focus {
+  background-color: rgba(232, 234, 237, 0.12);
+}
+
+.screenshot-ui-type-button:checked {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.screenshot-ui-type-button:checked:hover {
+  background-color: #aecbfa;
+}
+
+.screenshot-ui-capture-button {
+  border: 3px solid #e8eaed;
+}
+
+.screenshot-ui-capture-button .screenshot-ui-capture-button-circle {
+  background-color: #e8eaed;
+}
+
+.screenshot-ui-capture-button:hover .screenshot-ui-capture-button-circle,
+.screenshot-ui-capture-button:focus .screenshot-ui-capture-button-circle {
+  background-color: #ffffff;
+}
+
+.screenshot-ui-capture-button:active .screenshot-ui-capture-button-circle {
+  background-color: #9aa0a6;
+}
+
+.screenshot-ui-capture-button:cast .screenshot-ui-capture-button-circle {
+  background-color: #f28b82;
+}
+
+.screenshot-ui-shot-cast-container {
+  background-color: rgba(232, 234, 237, 0.10);
+}
+
+.screenshot-ui-shot-cast-button {
+  color: #e8eaed;
+}
+
+.screenshot-ui-shot-cast-button:hover,
+.screenshot-ui-shot-cast-button:focus {
+  background-color: rgba(232, 234, 237, 0.16);
+}
+
+.screenshot-ui-shot-cast-button:active {
+  background-color: rgba(232, 234, 237, 0.26);
+}
+
+.screenshot-ui-shot-cast-button:checked {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.screenshot-ui-shot-cast-button:insensitive {
+  color: rgba(232, 234, 237, 0.5);
+}
+
+.screenshot-ui-show-pointer-button {
+  color: #e8eaed;
+}
+
+.screenshot-ui-show-pointer-button:hover,
+.screenshot-ui-show-pointer-button:focus {
+  background-color: rgba(232, 234, 237, 0.12);
+}
+
+.screenshot-ui-window-selector {
+  background-color: #202124;
+}
+
+.screenshot-ui-window-selector-window:hover .screenshot-ui-window-selector-window-border {
+  border-color: rgba(138, 180, 248, 0.60);
+}
+
+.screenshot-ui-window-selector-window:checked .screenshot-ui-window-selector-window-border {
+  border-color: #8ab4f8;
+  background-color: rgba(138, 180, 248, 0.12);
+}
+
+.screenshot-ui-window-selector-check {
+  color: #202124;
+  background-color: #8ab4f8;
+}
+
+.screenshot-ui-tooltip {
+  background-color: #3c4043;
+  color: #e8eaed;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sperrbildschirm                                                     */
+/* Die Karten liegen ueber dem unscharfen Hintergrundbild, dessen        */
+/* Helligkeit beliebig ist. Weil helle Schrift auf einem hellen Motiv    */
+/* unter 4.5:1 faellt, sind Schleier und Flaechen im Dunkelmodus         */
+/* dichter als in der hellen Fassung, und jede Schriftfarbe steht fest.  */
+/* tools/check-contrast.mjs prueft dieselben Paare fuer hell und dunkel. */
+/* ------------------------------------------------------------------ */
+.unlock-dialog {
+  background-color: rgba(20, 21, 23, 0.86);
+}
+
+.unlock-dialog-clock .unlock-dialog-clock-time {
+  color: #ffffff;
+  font-weight: 300;
+}
+
+.unlock-dialog-clock .unlock-dialog-clock-date {
+  color: #e8eaed;
+}
+
+.unlock-dialog-clock .unlock-dialog-clock-hint {
+  color: #e8eaed;
+}
+
+.unlock-dialog .login-dialog-prompt-entry {
+  background-color: rgba(60, 64, 67, 0.93);
+  color: #e8eaed;
+}
+
+.unlock-dialog .login-dialog-prompt-entry:focus {
+  background-color: rgba(60, 64, 67, 0.97);
+  color: #e8eaed;
+  box-shadow: inset 0 0 0 2px #8ab4f8;
+}
+
+/* Knoepfe: im Dunkelmodus der helle Akzent mit dunkler Schrift, wie in
+   den Dialogen. */
+.unlock-dialog .button,
+.unlock-dialog .modal-dialog-button {
+  background-color: #8ab4f8;
+  color: #202124;
+  border: none;
+  border-radius: 999px;
+}
+
+.unlock-dialog .button:hover,
+.unlock-dialog .modal-dialog-button:hover {
+  background-color: #aecbfa;
+}
+
+.unlock-dialog .button:focus,
+.unlock-dialog .modal-dialog-button:focus {
+  background-color: #d2e3fc;
+}
+
+.unlock-dialog .login-dialog-user-list-view {
+  -st-vfade-offset: 1em;
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item {
+  background-color: rgba(60, 64, 67, 0.93);
+  color: #e8eaed;
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:hover {
+  background-color: rgba(95, 99, 104, 0.95);
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:focus,
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:selected,
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:active {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item:logged-in .user-icon {
+  border-color: #8ab4f8;
+}
+
+.unlock-dialog .login-dialog-user-list .login-dialog-user-list-item .login-dialog-timed-login-indicator {
+  background-color: #8ab4f8;
+}
+
+.unlock-dialog-notifications-container .notification,
+.unlock-dialog-notifications-container .unlock-dialog-notification-source {
+  background-color: rgba(32, 33, 36, 0.92);
+  color: #e8eaed;
+}
+
+.unlock-dialog-notifications-container .notification.critical,
+.unlock-dialog-notifications-container .unlock-dialog-notification-source.critical {
+  background-color: rgba(155, 28, 22, 0.92);
+  color: #e8eaed;
+}
+
+.unlock-dialog-notifications-container .message-media-control {
+  background-color: rgba(60, 64, 67, 0.93);
+  color: #e8eaed;
+}
+
+.unlock-dialog-notifications-container .message-media-control:hover,
+.unlock-dialog-notifications-container .message-media-control:focus {
+  background-color: #8ab4f8;
+  color: #202124;
+}
+
+.unlock-dialog-notification-count-text {
+  background-color: rgba(60, 64, 67, 0.93);
+  color: #e8eaed;
+}
+
+/* Fehlermeldung bei falschem Passwort: #f28b82 kam auf dem Schleier nur auf
+   2,9:1, deshalb das hellere Rot. */
+.unlock-dialog .login-dialog-message-warning {
+  color: #f2b8b5;
+}

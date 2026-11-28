@@ -17,9 +17,6 @@ THEME_DIR="$DATA_HOME/themes/$THEME_NAME"
 ALT_THEME_DIR="$HOME/.themes/$THEME_NAME"
 EXT_DIR="$DATA_HOME/gnome-shell/extensions/$EXT_UUID"
 HELPER="$HOME/.local/bin/chromeos-search-url"
-WALL_DIR="$DATA_HOME/backgrounds"
-WALLPAPER="$WALL_DIR/chromeos-wallpaper.png"
-WALLPAPER_LEGACY="$WALL_DIR/chromeos-wallpaper.jpg"
 ICON_DIR="$DATA_HOME/icons/$THEME_NAME"
 FONT_DIR="$DATA_HOME/fonts/$THEME_NAME"
 GTK4_DIR="$CONFIG_HOME/gtk-4.0"
@@ -244,12 +241,6 @@ if have_component gtk4; then
     if [ "$DRY_RUN" -eq 0 ]; then
         rmdir "$GTK4_DIR" 2>/dev/null || true
     fi
-fi
-
-if have_component wallpaper; then
-    remove_path "$WALLPAPER"
-    # Aeltere Installationen haben noch ein JPG.
-    remove_path "$WALLPAPER_LEGACY"
 fi
 
 remove_path "$CONFIG_DIR"

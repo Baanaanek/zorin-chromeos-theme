@@ -48,6 +48,26 @@ export class AppMenu {
         const id = this._app.get_id();
         const pinned = favorites.isFavorite(id);
 
+        // ChromeOS bietet "Neues Fenster" zuerst an. Aeltere Shell-Versionen
+        // kennen can_open_new_window() nicht; dann bleibt der Eintrag stehen.
+        let canOpenWindow = true;
+        try {
+            if (typeof this._app.can_open_new_window === 'function')
+                canOpenWindow = this._app.can_open_new_window();
+        } catch (e) {
+            canOpenWindow = true;
+        }
+        if (canOpenWindow) {
+            this._menu.addAction('Neues Fenster', () => {
+                try {
+                    this._app.open_new_window(-1);
+                } catch (e) {
+                    console.error(`[chromeos-shell] Neues Fenster fehlgeschlagen: ${e}`);
+                }
+                this._notify();
+            });
+        }
+
         this._menu.addAction(pinned ? 'Von der Shelf entfernen' : 'An die Shelf anheften', () => {
             try {
                 if (pinned)

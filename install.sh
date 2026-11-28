@@ -23,13 +23,9 @@ STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
 THEME_DIR="$DATA_HOME/themes/$THEME_NAME"
 EXT_DIR="$DATA_HOME/gnome-shell/extensions/$EXT_UUID"
 BIN_DIR="$HOME/.local/bin"
-WALL_DIR="$DATA_HOME/backgrounds"
 STATE_DIR="$STATE_HOME/chromeos-theme"
 BACKUP_FILE="$STATE_DIR/settings.tsv"
 DISABLED_FILE="$STATE_DIR/disabled-extensions.txt"
-WALLPAPER="$WALL_DIR/chromeos-wallpaper.png"
-WALLPAPER_NAME="chromeos-blue"
-WALLPAPER_SRC="$SCRIPT_DIR/assets/wallpapers/$WALLPAPER_NAME.png"
 CURSOR_NAME="$THEME_NAME"
 CURSOR_SRC="$SCRIPT_DIR/cursor/$CURSOR_NAME"
 ICON_DIR="$DATA_HOME/icons/$CURSOR_NAME"
@@ -49,13 +45,12 @@ OPT_CURSOR=1
 OPT_GTK4=1
 OPT_DING=1
 OPT_FONTS=1
-OPT_WALLPAPER=1
 
 usage() {
     cat <<'EOF'
 ChromeOS-Theme fuer Zorin OS
 
-  ./install.sh              Theme, Extension, Hintergrund installieren
+  ./install.sh              Theme und Extension installieren
   ./install.sh --activate   nur Einstellungen setzen und Extension aktivieren
                             (nach dem ersten Ab-/Anmelden nuetzlich)
   ./install.sh --check      Ist-Zustand gegen Soll pruefen (Exit 1 bei Abweichung)
@@ -64,7 +59,7 @@ ChromeOS-Theme fuer Zorin OS
   ./install.sh --help       diese Hilfe
 
 Teile weglassen (bleiben dann unangetastet, auch beim Deinstallieren):
-  --no-cursor --no-gtk4 --no-ding --no-fonts --no-wallpaper
+  --no-cursor --no-gtk4 --no-ding --no-fonts
 
 Deinstallation: ./uninstall.sh
 EOF
@@ -79,7 +74,6 @@ for arg in "$@"; do
         --no-gtk4) OPT_GTK4=0 ;;
         --no-ding) OPT_DING=0 ;;
         --no-fonts) OPT_FONTS=0 ;;
-        --no-wallpaper) OPT_WALLPAPER=0 ;;
         --version) printf 'chromeos-theme %s\n' "$VERSION"; exit 0 ;;
         -h|--help) usage; exit 0 ;;
         *) printf 'Unbekannte Option: %s\n\n' "$arg"; usage; exit 2 ;;
@@ -122,6 +116,8 @@ run() {
 # --- Voraussetzungen -------------------------------------------------------
 [ -f "$SCRIPT_DIR/theme/$THEME_NAME/gnome-shell/gnome-shell.css" ] \
     || die "Theme-Dateien fehlen. Bitte das komplette Repo verwenden (nicht nur install.sh kopieren)."
+[ -f "$SCRIPT_DIR/theme/$THEME_NAME/gnome-shell/gnome-shell-dark.css" ] \
+    || die "Dunkle Shell-CSS fehlt: theme/$THEME_NAME/gnome-shell/gnome-shell-dark.css"
 [ -d "$SCRIPT_DIR/extension/$EXT_UUID" ] \
     || die "Extension-Ordner fehlt: extension/$EXT_UUID"
 [ -f "$SCRIPT_DIR/theme/$THEME_NAME/gtk-4.0/gtk.css" ] \
@@ -234,16 +230,6 @@ variant_list() {
     printf '%s]' "$out"
 }
 
-# Reiner Bash-URI: keine python3-Abhaengigkeit.
-file_uri() {
-    local path=$1
-    path=${path//%/%25}
-    path=${path// /%20}
-    path=${path//#/%23}
-    path=${path//\?/%3F}
-    printf 'file://%s' "$path"
-}
-
 # --- 1. Dateien ------------------------------------------------------------
 install_files() {
     info "Theme nach $THEME_DIR"
@@ -273,14 +259,6 @@ install_files() {
         *":$BIN_DIR:"*) ;;
         *) warn "$BIN_DIR ist nicht im PATH - der Launcher nutzt den absoluten Pfad trotzdem." ;;
     esac
-    info "Hintergrundbild nach $WALLPAPER"
-    if [ "$OPT_WALLPAPER" -eq 1 ]; then
-        run mkdir -p "$WALL_DIR"
-        run cp -a "$WALLPAPER_SRC" "$WALLPAPER"
-    else
-        skip "Hintergrund uebersprungen (--no-wallpaper)."
-    fi
-
     info "Mauszeiger nach $ICON_DIR"
     if [ "$OPT_CURSOR" -eq 1 ]; then
         if [ -d "$ICON_DIR" ]; then
@@ -378,12 +356,6 @@ apply_settings() {
     fi
 
     set_key org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
-
-    if [ "$DRY_RUN" -eq 0 ] && [ -f "$WALLPAPER" ]; then
-        set_key org.gnome.desktop.background picture-uri "$(file_uri "$WALLPAPER")"
-        set_key org.gnome.desktop.background picture-uri-dark "$(file_uri "$WALLPAPER")"
-        set_key org.gnome.desktop.background picture-options "zoom"
-    fi
 
     local favorites=() id
     id=$(pick_desktop google-chrome.desktop brave-browser.desktop chromium.desktop \
@@ -499,6 +471,7 @@ query_key() {
 check_state() {
     info "Pruefe Dateien"
     expect_file "Shell-Theme" "$THEME_DIR/gnome-shell/gnome-shell.css"
+    expect_file "Shell-Theme dunkel" "$THEME_DIR/gnome-shell/gnome-shell-dark.css"
     expect_file "Theme-Markierung" "$THEME_DIR/.chromeos-theme"
     expect_file "Extension" "$EXT_DIR/metadata.json"
 
@@ -511,16 +484,51 @@ check_state() {
         CHECK_FAILED=$((CHECK_FAILED + 1))
     fi
 
+    # Faengt eine dunkle Fassung ab, die Popups, Kalender oder Dialoge vergisst.
+    local dark_css="$THEME_DIR/gnome-shell/gnome-shell-dark.css"
+    if grep -q '\.popup-menu-content' "$dark_css" 2>/dev/null \
+        && grep -q '\.calendar-day' "$dark_css" 2>/dev/null \
+        && grep -q '\.unlock-dialog' "$dark_css" 2>/dev/null \
+        && grep -q '\.modal-dialog' "$dark_css" 2>/dev/null; then
+        ok "Dunkle Shell-CSS"
+    else
+        printf '%s   x%s Dunkle Shell-CSS deckt Popups, Kalender, Sperrbildschirm oder Dialoge nicht ab\n' \
+            "$C_RED" "$C_OFF" >&2
+        CHECK_FAILED=$((CHECK_FAILED + 1))
+    fi
+
+    # Faengt eine Fassung ab, die Schnelleinstellungen, Benachrichtigungen
+    # oder die Screenshot-UI vergisst - die sieht sonst nach GNOME aus.
+    if grep -q '\.quick-toggle' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
+        && grep -q '\.message .message-media-control' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
+        && grep -q '\.screenshot-ui-panel' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
+        && grep -q '\.screenshot-ui-panel' "$dark_css" 2>/dev/null \
+        && grep -q '\.osd-window' "$dark_css" 2>/dev/null; then
+        ok "Oberflaechen-CSS (Schnelleinstellungen, Benachrichtigungen, Screenshot-UI)"
+    else
+        printf '%s   x%s Shell-Theme deckt Schnelleinstellungen, Benachrichtigungen oder die Screenshot-UI nicht ab\n' \
+            "$C_RED" "$C_OFF" >&2
+        CHECK_FAILED=$((CHECK_FAILED + 1))
+    fi
+
+    # Zorin-Programme (Zorin Appearance, Zorin Connect) und Dateidialoge
+    # sind GTK 3: ohne Infoleisten und Werkzeugleisten bleibt dort Adwaita.
+    if grep -q '^infobar' "$THEME_DIR/gtk-3.0/gtk.css" 2>/dev/null \
+        && grep -q '^toolbar' "$THEME_DIR/gtk-3.0/gtk.css" 2>/dev/null \
+        && grep -q '^infobar' "$THEME_DIR/gtk-3.0/gtk-dark.css" 2>/dev/null; then
+        ok "GTK-3-Widgets (Infoleisten, Werkzeugleisten)"
+    else
+        printf '%s   x%s GTK-3-Theme gestaltet Infoleisten oder Werkzeugleisten nicht\n' \
+            "$C_RED" "$C_OFF" >&2
+        CHECK_FAILED=$((CHECK_FAILED + 1))
+    fi
+
     if [ -x "$BIN_DIR/chromeos-search-url" ]; then
         ok "Suchhelfer"
     else
         printf '%s   x%s Suchhelfer fehlt oder ist nicht ausfuehrbar: %s\n' \
             "$C_RED" "$C_OFF" "$BIN_DIR/chromeos-search-url" >&2
         CHECK_FAILED=$((CHECK_FAILED + 1))
-    fi
-
-    if [ "$OPT_WALLPAPER" -eq 1 ]; then
-        expect_file "Hintergrund" "$WALLPAPER"
     fi
 
     if [ "$OPT_CURSOR" -eq 1 ]; then
@@ -609,7 +617,6 @@ record_components() {
         grep -qxF "$component" "$COMPONENTS_FILE" 2>/dev/null \
             || printf '%s\n' "$component" >> "$COMPONENTS_FILE"
     done
-    [ "$OPT_WALLPAPER" -eq 1 ] && { grep -qxF wallpaper "$COMPONENTS_FILE" 2>/dev/null || printf 'wallpaper\n' >> "$COMPONENTS_FILE"; }
     [ "$OPT_CURSOR" -eq 1 ] && { grep -qxF cursor "$COMPONENTS_FILE" 2>/dev/null || printf 'cursor\n' >> "$COMPONENTS_FILE"; }
     [ "$OPT_GTK4" -eq 1 ] && { grep -qxF gtk4 "$COMPONENTS_FILE" 2>/dev/null || printf 'gtk4\n' >> "$COMPONENTS_FILE"; }
     [ "$OPT_FONTS" -eq 1 ] && { grep -qxF fonts "$COMPONENTS_FILE" 2>/dev/null || printf 'fonts\n' >> "$COMPONENTS_FILE"; }

@@ -389,3 +389,50 @@ list.boxed-list {
   border: 1px solid alpha(#000000, 0.40);
   background-color: @theme_base_color;
 }
+
+/* ------------------------------------------------------------------ */
+/* Infoleisten, Werkzeugleisten, Auswahl in Bäumen und Pfadleisten      */
+/* Zorin-Programme (Zorin Appearance, Zorin Connect) und aeltere Apps  */
+/* nutzen diese Widgets; ohne eigene Werte bliebe dort Adwaita-Blau.   */
+/* ------------------------------------------------------------------ */
+infobar {
+  border-radius: 12px;
+  background-color: alpha(#8ab4f8, 0.18);
+  color: #e8eaed;
+}
+
+infobar.warning {
+  background-color: alpha(#fdd663, 0.22);
+  color: #fdd663;
+}
+
+infobar.error {
+  background-color: alpha(#f28b82, 0.22);
+  color: #f9b8b3;
+}
+
+infobar entry {
+  background-color: #292a2d;
+  color: #e8eaed;
+}
+
+toolbar {
+  background-color: #292a2d;
+  color: #e8eaed;
+  border: none;
+  padding: 4px;
+}
+
+toolbar button {
+  border-radius: 999px;
+}
+
+treeview.view:selected {
+  background-color: alpha(#8ab4f8, 0.24);
+  color: #e8eaed;
+}
+
+filechooser placessidebar row:selected {
+  background-color: alpha(#8ab4f8, 0.24);
+  color: #e8eaed;
+}

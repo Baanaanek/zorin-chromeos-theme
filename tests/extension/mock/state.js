@@ -51,4 +51,5 @@ export const state = {
     themeUnloads: [],
     appInfoUris: [],
     closedWindows: [],
+    keyFocus: null,
 };
