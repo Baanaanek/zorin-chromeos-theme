@@ -124,6 +124,7 @@ deshalb ueber `#ffffff` (hellstmoegliches Motiv) statt ueber eine angenommene
 Flaeche und prueft dieselben 14 Paare je einmal in hell und dunkel. Vorher
 lagen die hellen Werte bei 3,6–3,8:1; jetzt sind beide Modi dicht und die
 Textfarbe ist festgeschrieben.
+
 ### Apps und die uebrigen Shell-Flaechen
 
 - **Einstellungen und Dateien** (GTK 4/libadwaita) nehmen ihre Farben aus
@@ -145,10 +146,19 @@ Textfarbe ist festgeschrieben.
   dunkel `#292a2d`), Modus- und Geraeteknoepfe, Ausloeser mit Ring,
   Auswahlrahmen und Fenster-/Bildschirmwahl im Akzent, Tooltip als dunkle
   Kapsel.
+- **Fensterumschalter** (Alt+Tab, Alt+^): dieselbe Karte, Vorschaubilder mit
+  1 px Rand, Auswahl als blaue Flaeche (dunkel `#8ab4f8`), Pfeile an Apps mit
+  mehreren Fenstern, Zyklus-Rahmen (Alt+Esc) im Akzent.
+- **Shell-Dialoge**: Abmelden/Ausschalten mit Akku-Warnung, Ausfuehren
+  (Alt+F2), Passphrase und Polkit, Audiogeraetewahl, Zugriffsfreigabe. Sie
+  liegen auf `.modal-dialog`; Warnungen `#9a5300` (dunkel `#fdd663`), Fehler
+  `#c5221f` (dunkel `#f28b82`).
+- **GTK-3-Menues**: Menueleiste klassischer Programme, Popover-Menues
+  (`modelbutton`) mit Akzent-Auswahl, Trennlinien und Combobox-Knoepfe.
 
-`tools/check-contrast.mjs` prueft 13 dieser Paare je einmal in hell und
-dunkel; `tests/scripts/run.sh` prueft, dass die Regeln im Repo und im
-installierten Theme liegen.
+`tools/check-contrast.mjs` prueft 13 Oberflaechen- und 8 Umschalter-/
+Dialog-Paare je einmal in hell und dunkel; `tests/scripts/run.sh` prueft,
+dass die Regeln im Repo und im installierten Theme liegen.
 
 - Nicht nachbaubar, weil GNOME Shell die Aufbauten festlegt: die Knoepfe
   "Shut down"/"Sign out" unten links, Datum/Uhrzeit/Akku unten rechts, das

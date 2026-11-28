@@ -6,7 +6,7 @@ erstes Argument (Standard: das Repo, in dem sie liegen).
 
 ```bash
 bash tests/run-all.sh                # beide Harnesses
-bash tests/scripts/run.sh            # nur Install/Uninstall (106 Prüfungen)
+bash tests/scripts/run.sh            # nur Install/Uninstall (109 Prüfungen)
 bun tests/extension/lifecycle.mjs    # nur Extension (75 Prüfungen)
 ```
 
@@ -40,7 +40,7 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
   Schrift- und drei DING-Keys), Zorin-Leisten deaktiviert, die Extension
   aktiviert. Die installierten Teile stehen in `components.txt`.
 - `--check` nach der Installation: Exit 0 und „Alles wie erwartet“.
-- zweiter Lauf: idempotent, die Sicherung bleibt bei 22 Einträgen.
+- zweiter Lauf: idempotent, die Sicherung bleibt bei 19 Einträgen.
 - `--activate`: setzt nur Einstellungen und lässt die Dateien unverändert.
 - `uninstall.sh --dry-run`: entfernt nichts.
 - `uninstall.sh`: entfernt alles, stellt alle 19 gesicherten Werte exakt
@@ -58,7 +58,7 @@ Legt ein temporäres `HOME` an, ersetzt `gsettings`, `dconf`,
 - Lauf ohne GNOME-Werkzeuge: Installation und Deinstallation brechen nicht ab
   und räumen auch Cursor und GTK-4-Datei vollständig auf.
 
-Der Test gilt als bestanden, wenn `110/110` erscheint. `KEEP=1` behält das
+Der Test gilt als bestanden, wenn `109/109` erscheint. `KEEP=1` behält das
 temporäre Verzeichnis und gibt den Pfad aus.
 
 ## `extension/lifecycle.mjs` – Extension-Lebenszyklus
@@ -98,9 +98,12 @@ lädt `extension.js` als echtes ES-Modul. Geprüft werden unter anderem:
   Entsperr-Knopf, Kontoliste, Benachrichtigungs- und Medienkarten,
   Fehlermeldung).
 - Streckenprüfungen auf Repo-Ebene: das Shell-Theme gestaltet
-  Schnelleinstellungen, Benachrichtigungen und Screenshot-UI, die dunkle
-  Fassung zusätzlich OSD und Medienzeile; die GTK-3-Themes decken
-  Infoleisten, Werkzeugleisten und die Dateiauswahl ab (Zorin-Programme).
+  Schnelleinstellungen, Benachrichtigungen, Screenshot-UI, den
+  Fensterumschalter und die Shell-Dialoge (Abmelden, Ausführen, Passphrase,
+  Polkit, Audiogerät); die dunkle Fassung deckt dieselben Flächen plus OSD
+  und Medienzeile ab; die GTK-3-Themes decken Infoleisten,
+  Werkzeugleisten, Menüleisten, Popover-Menüs und die Dateiauswahl ab
+  (Zorin-Programme).
 - Dunkelmodus über `color-scheme`, Supertaste/Overview.
 - `disable()`: Chrome entfernt, Tray exakt zurückgehängt, Panel wieder
   sichtbar, alle Sitzungs-Signale gelöst.

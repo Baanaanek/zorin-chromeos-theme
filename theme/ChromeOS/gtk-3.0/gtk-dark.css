@@ -436,3 +436,50 @@ filechooser placessidebar row:selected {
   background-color: alpha(#8ab4f8, 0.24);
   color: #e8eaed;
 }
+
+/* ------------------------------------------------------------------ */
+/* Menueleiste, Popover-Menues, Trennlinien                            */
+/* Dieselben Selektoren wie in der hellen Fassung; klassische Programme */
+/* mit Menubar (GIMP, aeltere Zorin-Werkzeuge) folgen damit dem Theme.  */
+/* ------------------------------------------------------------------ */
+menubar,
+.menubar {
+  background-color: @headerbar_bg_color;
+  color: @headerbar_fg_color;
+  border: none;
+  box-shadow: none;
+}
+
+menubar > menuitem {
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+menubar > menuitem:hover {
+  background-color: alpha(#e8eaed, 0.10);
+}
+
+modelbutton {
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+modelbutton:hover {
+  background-color: alpha(#e8eaed, 0.10);
+}
+
+modelbutton:selected {
+  background-color: alpha(#8ab4f8, 0.22);
+  color: #e8eaed;
+}
+
+separator {
+  background-color: alpha(#e8eaed, 0.14);
+  min-width: 1px;
+  min-height: 1px;
+}
+
+combobox button {
+  border-radius: 8px;
+}

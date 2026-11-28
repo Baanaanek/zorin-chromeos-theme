@@ -316,6 +316,30 @@ const DESKTOP_PAIRS = [
     ['Fensterkennung', '.window-caption', 'color', '.window-caption', 'background-color', 4.5],
 ];
 
+// Fensterumschalter (Alt+Tab) und die uebrigen Shell-Dialoge.
+const SWITCHER_PAIRS = [
+    ['Fensterumschalter', '.switcher-list .item-box', 'color',
+        '.switcher-list', 'background-color', 4.5],
+    ['Fensterumschalter Auswahl', '.switcher-list .item-box:selected', 'color',
+        '.switcher-list .item-box:selected', 'background-color', 4.5],
+];
+
+const DIALOG_PAIRS = [
+    ['Dialog-Fensterliste',
+        '.dialog-list .dialog-list-item .dialog-list-item-description', 'color',
+        '.modal-dialog', 'background-color', 4.5],
+    ['Abmelde-Warnung', '.end-session-dialog .end-session-dialog-battery-warning',
+        'color', '.modal-dialog', 'background-color', 4.5],
+    ['Ausfuehren-Beschreibung', '.run-dialog .run-dialog-description', 'color',
+        '.modal-dialog', 'background-color', 4.5],
+    ['Passphrase-Fehler', '.prompt-dialog-error-label', 'color',
+        '.modal-dialog', 'background-color', 4.5],
+    ['Polkit-Root', '.polkit-dialog-user-layout .polkit-dialog-user-root-label',
+        'color', '.modal-dialog', 'background-color', 4.5],
+    ['Audiogeraet aktiv', '.audio-selection-device:active', 'color',
+        '.audio-selection-device:active', 'background-color', 4.5],
+];
+
 // [Bezeichnung, Vordergrund-Selector, Eigenschaft, Hintergrund-Selector,
 //  Eigenschaft, Mindestkontrast, Untergrund fuer halbtransparente Flaechen]
 function checkShellPairs(rules, label, pairs, defaultBackdrop) {
@@ -344,10 +368,14 @@ checkShellPairs(darkRules, 'dunkel', LOCK_PAIRS, BRIGHT_WALLPAPER);
 if (POPUP_LIGHT) {
     checkShellPairs(lightRules, 'hell', UI_PAIRS, POPUP_LIGHT);
     checkShellPairs(lightRules, 'hell', DESKTOP_PAIRS, BRIGHT_WALLPAPER);
+    checkShellPairs(lightRules, 'hell', SWITCHER_PAIRS, POPUP_LIGHT);
+    checkShellPairs(lightRules, 'hell', DIALOG_PAIRS, POPUP_LIGHT);
 }
 if (POPUP) {
     checkShellPairs(darkRules, 'dunkel', UI_PAIRS, POPUP);
     checkShellPairs(darkRules, 'dunkel', DESKTOP_PAIRS, BRIGHT_WALLPAPER);
+    checkShellPairs(darkRules, 'dunkel', SWITCHER_PAIRS, POPUP);
+    checkShellPairs(darkRules, 'dunkel', DIALOG_PAIRS, POPUP);
 }
 
 if (failures > 0) {
@@ -358,3 +386,4 @@ console.log(`  ok ${TEXT_PAIRS.length + ACCENT_PAIRS.length} Farbpaare in hell u
 console.log(`  ok ${SHELL_PAIRS.length} Shell-Farbpaare im Dunkelmodus geprueft`);
 console.log(`  ok ${LOCK_PAIRS.length} Sperrbildschirm-Paare in hell und dunkel geprueft`);
 console.log(`  ok ${UI_PAIRS.length + DESKTOP_PAIRS.length} Oberflaechen-Paare in hell und dunkel geprueft`);
+console.log(`  ok ${SWITCHER_PAIRS.length + DIALOG_PAIRS.length} Umschalter- und Dialog-Paare in hell und dunkel geprueft`);

@@ -502,7 +502,10 @@ check_state() {
     if grep -q '\.quick-toggle' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
         && grep -q '\.message .message-media-control' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
         && grep -q '\.screenshot-ui-panel' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
+        && grep -q '\.switcher-list' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
+        && grep -q '\.run-dialog' "$THEME_DIR/gnome-shell/gnome-shell.css" 2>/dev/null \
         && grep -q '\.screenshot-ui-panel' "$dark_css" 2>/dev/null \
+        && grep -q '\.switcher-list' "$dark_css" 2>/dev/null \
         && grep -q '\.osd-window' "$dark_css" 2>/dev/null; then
         ok "Oberflaechen-CSS (Schnelleinstellungen, Benachrichtigungen, Screenshot-UI)"
     else

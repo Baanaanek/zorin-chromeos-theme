@@ -550,6 +550,91 @@ stage {
   background-color: rgba(26, 115, 232, 0.36);
 }
 
+/* Rahmen um das gerade gewaehlte Fenster in der Uebersicht. GNOME 45+
+   nennt ihn .window-capture, aeltere Fassungen .window-clone-border; beide
+   stehen hier, damit der Rahmen auf jeder unterstuetzten Version greift. */
+.window-capture,
+.window-clone-border {
+  border: 3px solid rgba(26, 115, 232, 0.80);
+  border-radius: 16px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Fensterumschalter (Alt+Tab, Alt+^)                                  */
+/* ChromeOS zeigt eine schwebende Karte mit Vorschaubildern und die     */
+/* Auswahl im Akzent; GNOME zeichnet dieselbe Karte als OSD.            */
+/* ------------------------------------------------------------------ */
+.switcher-popup {
+  padding: 0;
+  spacing: 16px;
+}
+
+.switcher-list {
+  border-radius: 24px;
+  background-color: rgba(248, 249, 250, 0.99);
+  color: #202124;
+  border: 1px solid rgba(60, 64, 67, 0.12);
+  box-shadow: 0 8px 24px 3px rgba(60, 64, 67, 0.22);
+  padding: 12px;
+}
+
+.switcher-list .switcher-list-item-container {
+  spacing: 12px;
+}
+
+.switcher-list .item-box {
+  border-radius: 14px;
+  padding: 8px;
+  color: #202124;
+}
+
+/* Der Zeiger soll nicht mit der Tastaturauswahl konkurrieren. */
+.switcher-list .item-box:hover {
+  background-color: transparent;
+}
+
+.switcher-list .item-box:selected {
+  background-color: rgba(26, 115, 232, 0.16);
+  color: #174ea6;
+}
+
+.switcher-list .separator {
+  width: 1px;
+  background-color: rgba(60, 64, 67, 0.14);
+}
+
+.switcher-list .thumbnail-box {
+  padding: 2px;
+  spacing: 6px;
+}
+
+.switcher-list .thumbnail {
+  border-radius: 8px;
+  border: 1px solid rgba(60, 64, 67, 0.12);
+}
+
+.switcher-arrow {
+  color: rgba(32, 33, 36, 0.50);
+  border-color: rgba(32, 33, 36, 0.50);
+}
+
+.switcher-arrow:highlighted {
+  color: #1a73e8;
+  border-color: #1a73e8;
+}
+
+/* Fensterzyklus (Alt+Esc/Alt+F6) markiert dasselbe Fenster im Akzent. */
+.cycler-highlight {
+  border: 3px solid #1a73e8;
+  border-radius: 8px;
+}
+
+.input-source-switcher-symbol {
+  font-size: 34pt;
+  width: 96px;
+  height: 96px;
+}
+
 /* ------------------------------------------------------------------ */
 /* OSD (Lautstaerke, Helligkeit)                                       */
 /* ------------------------------------------------------------------ */
@@ -619,6 +704,76 @@ stage {
 .polkit-dialog-user-layout .username-label {
   font-size: 12pt;
   font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
+/* Uebrige Shell-Dialoge                                               */
+/* Abmelden/Ausschalten, Ausfuehren (Alt+F2), Passphrase und Polkit,    */
+/* Audiogeraet, Zugriffsfreigabe. Sie liegen alle auf .modal-dialog.    */
+/* ------------------------------------------------------------------ */
+.headline {
+  font-weight: 500;
+}
+
+/* Akku-Warnung beim Abmelden und die Ueberschrift der Fensterliste. */
+.end-session-dialog .end-session-dialog-battery-warning,
+.dialog-list .dialog-list-title {
+  color: #9a5300;
+}
+
+.dialog-list .dialog-list-item .dialog-list-item-title {
+  font-weight: 600;
+}
+
+.dialog-list .dialog-list-item .dialog-list-item-description {
+  color: #5f6368;
+}
+
+.run-dialog .run-dialog-entry {
+  width: 20em;
+}
+
+.run-dialog .run-dialog-description {
+  color: #5f6368;
+}
+
+/* Passphrase (Schluesselbund) und Polkit-Abfrage. */
+.prompt-dialog .prompt-dialog-password-entry {
+  width: 20em;
+}
+
+.prompt-dialog-error-label {
+  color: #c5221f;
+}
+
+.prompt-dialog-info-label,
+.prompt-dialog-null-label {
+  color: #5f6368;
+}
+
+.polkit-dialog-user-layout .polkit-dialog-user-root-label {
+  color: #9a5300;
+}
+
+/* Auswahl des Ausgabegeraets (Lautstaerke-Pfeil > Audio). */
+.audio-device-selection-dialog .audio-selection-device {
+  border-radius: 12px;
+  padding: 6px;
+}
+
+.audio-selection-device:hover,
+.audio-selection-device:focus {
+  background-color: rgba(60, 64, 67, 0.08);
+}
+
+.audio-selection-device:active {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+/* Freigabe-Dialog fuer Bildschirmzugriff (Portal). */
+.access-dialog {
+  text-align: center;
 }
 
 #LookingGlassDialog {

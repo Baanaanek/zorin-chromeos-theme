@@ -377,6 +377,56 @@ stage {
   background-color: rgba(138, 180, 248, 0.36);
 }
 
+.window-capture,
+.window-clone-border {
+  border: 3px solid rgba(138, 180, 248, 0.80);
+}
+
+/* ------------------------------------------------------------------ */
+/* Fensterumschalter (Alt+Tab, Alt+^)                                  */
+/* ------------------------------------------------------------------ */
+.switcher-list {
+  background-color: #292a2d;
+  color: #e8eaed;
+  border: 1px solid rgba(232, 234, 237, 0.14);
+  box-shadow: 0 8px 24px 3px rgba(0, 0, 0, 0.6);
+}
+
+.switcher-list .item-box {
+  color: #e8eaed;
+}
+
+.switcher-list .item-box:hover {
+  background-color: transparent;
+}
+
+.switcher-list .item-box:selected {
+  background-color: rgba(138, 180, 248, 0.18);
+  color: #8ab4f8;
+}
+
+.switcher-list .separator {
+  background-color: rgba(232, 234, 237, 0.14);
+}
+
+.switcher-list .thumbnail {
+  border: 1px solid rgba(232, 234, 237, 0.14);
+}
+
+.switcher-arrow {
+  color: rgba(232, 234, 237, 0.50);
+  border-color: rgba(232, 234, 237, 0.50);
+}
+
+.switcher-arrow:highlighted {
+  color: #8ab4f8;
+  border-color: #8ab4f8;
+}
+
+.cycler-highlight {
+  border: 3px solid #8ab4f8;
+}
+
 /* ------------------------------------------------------------------ */
 /* OSD (Lautstaerke, Helligkeit)                                       */
 /* ------------------------------------------------------------------ */
@@ -423,6 +473,44 @@ stage {
 
 .modal-dialog .modal-dialog-linked-button:last-child:hover {
   background-color: #aecbfa;
+}
+
+/* Uebrige Shell-Dialoge: Abmelden, Ausfuehren, Passphrase, Polkit,
+   Audiogeraet. Dieselben Flaechen wie hell, Schrift eine Stufe heller. */
+.end-session-dialog .end-session-dialog-battery-warning,
+.dialog-list .dialog-list-title {
+  color: #fdd663;
+}
+
+.dialog-list .dialog-list-item .dialog-list-item-description {
+  color: #9aa0a6;
+}
+
+.run-dialog .run-dialog-description {
+  color: #9aa0a6;
+}
+
+.prompt-dialog-error-label {
+  color: #f28b82;
+}
+
+.prompt-dialog-info-label,
+.prompt-dialog-null-label {
+  color: #9aa0a6;
+}
+
+.polkit-dialog-user-layout .polkit-dialog-user-root-label {
+  color: #fdd663;
+}
+
+.audio-selection-device:hover,
+.audio-selection-device:focus {
+  background-color: rgba(232, 234, 237, 0.12);
+}
+
+.audio-selection-device:active {
+  background-color: #8ab4f8;
+  color: #202124;
 }
 
 #LookingGlassDialog {

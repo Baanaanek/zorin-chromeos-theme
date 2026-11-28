@@ -294,6 +294,50 @@ menuitem:disabled {
   color: @insensitive_fg_color;
 }
 
+/* Menueleiste klassischer Programme (GIMP, aeltere Zorin-Werkzeuge). */
+menubar,
+.menubar {
+  background-color: @headerbar_bg_color;
+  color: @headerbar_fg_color;
+  border: none;
+  box-shadow: none;
+}
+
+menubar > menuitem {
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+menubar > menuitem:hover {
+  background-color: alpha(#3c4043, 0.08);
+}
+
+/* Eintraege in Popover-Menues (Zahnrad-Menues, libhandy-Listen). */
+modelbutton {
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+modelbutton:hover {
+  background-color: alpha(#3c4043, 0.08);
+}
+
+modelbutton:selected {
+  background-color: alpha(#1a73e8, 0.14);
+  color: #174ea6;
+}
+
+separator {
+  background-color: alpha(#3c4043, 0.12);
+  min-width: 1px;
+  min-height: 1px;
+}
+
+combobox button {
+  border-radius: 8px;
+}
+
 popover.background {
   padding: 6px;
   border-radius: 12px;

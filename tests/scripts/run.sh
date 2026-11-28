@@ -266,6 +266,24 @@ check 'GTK-3-Themes decken Infoleisten, Werkzeugleisten und Dateiauswahl ab' bas
     grep -q "^infobar" "$2" && grep -q "^toolbar" "$2" &&
     grep -q "placessidebar row:selected" "$2"' \
     _ "$REPO/theme/ChromeOS/gtk-3.0/gtk.css" "$REPO/theme/ChromeOS/gtk-3.0/gtk-dark.css"
+check 'Shell-Theme deckt Fensterumschalter und Shell-Dialoge ab' bash -c '
+    grep -qF ".switcher-list .item-box:selected" "$1" &&
+    grep -qF ".run-dialog .run-dialog-description" "$1" &&
+    grep -qF ".end-session-dialog-battery-warning" "$1" &&
+    grep -qF ".prompt-dialog-error-label" "$1" &&
+    grep -qF ".audio-selection-device:active" "$1"' \
+    _ "$REPO/theme/ChromeOS/gnome-shell/gnome-shell.css"
+check 'dunkle Shell-CSS deckt Fensterumschalter und Shell-Dialoge ab' bash -c '
+    grep -qF ".switcher-list .item-box:selected" "$1" &&
+    grep -qF ".run-dialog .run-dialog-description" "$1" &&
+    grep -qF ".end-session-dialog-battery-warning" "$1" &&
+    grep -qF ".prompt-dialog-error-label" "$1" &&
+    grep -qF ".audio-selection-device:active" "$1"' \
+    _ "$REPO/theme/ChromeOS/gnome-shell/gnome-shell-dark.css"
+check 'GTK-3-Themes decken Menueleisten und Popover-Menues ab' bash -c '
+    grep -q "^menubar" "$1" && grep -q "^modelbutton" "$1" &&
+    grep -q "^menubar" "$2" && grep -q "^modelbutton" "$2"' \
+    _ "$REPO/theme/ChromeOS/gtk-3.0/gtk.css" "$REPO/theme/ChromeOS/gtk-3.0/gtk-dark.css"
 
 # --- 1. Probelauf ----------------------------------------------------------
 run_stub install.sh --dry-run >"$OUT" 2>"$ERR"
